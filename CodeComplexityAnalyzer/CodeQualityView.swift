@@ -212,6 +212,8 @@ struct FileQualityRow: View {
                         Label(issue, systemImage: "exclamationmark.circle")
                             .font(.caption).foregroundColor(.orange)
                     }
+                    QualityCopyPromptButton(fq: fq)
+                        .padding(.top, 4)
                 }
                 .padding(.horizontal, 12).padding(.bottom, 10)
                 .background(Color(.textBackgroundColor))
@@ -230,5 +232,45 @@ struct FileQualityRow: View {
 
     private var scoreColor: Color {
         fq.score >= 80 ? .green : fq.score >= 60 ? .orange : .red
+    }
+}
+
+// MARK: - QualityCopyPromptButton
+
+fileprivate struct QualityCopyPromptButton: View {
+    let fq: FileQuality
+    @State private var copied = false
+
+    var body: some View {
+        Button {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(makePrompt(), forType: .string)
+            withAnimation { copied = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation { copied = false }
+            }
+        } label: {
+            Label(
+                copied ? "복사됨!" : "AI 수정 프롬프트 복사",
+                systemImage: copied ? "checkmark.circle.fill" : "doc.on.clipboard"
+            )
+            .font(.caption).fontWeight(.semibold)
+            .foregroundColor(copied ? .green : .accentColor)
+        }
+        .buttonStyle(.bordered).controlSize(.small)
+    }
+
+    private func makePrompt() -> String {
+        """
+        다음 Swift 파일의 코드 품질 문제를 개선해줘.
+
+        파일: \(fq.file.filePath)
+        품질 점수: \(String(format: "%.0f", fq.score)) / 100
+        평균 함수 길이: \(String(format: "%.1f", fq.avgFunctionLength))줄
+        주석 비율: \(String(format: "%.1f%%", fq.commentRatio * 100))
+
+        발견된 문제:
+        \(fq.issues.map { "- \($0)" }.joined(separator: "\n"))
+        """
     }
 }

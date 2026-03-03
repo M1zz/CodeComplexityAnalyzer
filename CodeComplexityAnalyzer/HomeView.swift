@@ -1,0 +1,250 @@
+import SwiftUI
+
+struct HomeView: View {
+    let healthScore: HealthScore?
+    let healthTrend: Double?
+    let actionItems: [ActionItem]
+    let selectedPath: String?
+    let lastSnapshot: ProjectSnapshot?
+    let onNavigate: (ViewMode) -> Void
+    var onSelectFolder: (() -> Void)? = nil
+
+    private var projectName: String {
+        guard let path = selectedPath else { return "프로젝트 없음" }
+        return URL(fileURLWithPath: path).lastPathComponent
+    }
+
+    private var lastAnalysisDate: String? {
+        guard let snapshot = lastSnapshot else { return nil }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        formatter.locale = Locale(identifier: "ko_KR")
+        return formatter.string(from: snapshot.date)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                if let health = healthScore {
+                    analysisResultView(health: health)
+                } else {
+                    emptyStateView
+                }
+            }
+            .padding()
+        }
+    }
+
+    // MARK: - Empty State
+
+    private var emptyStateView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            Image(systemName: "chart.bar.doc.horizontal")
+                .font(.system(size: 64))
+                .foregroundColor(.secondary)
+
+            VStack(spacing: 8) {
+                Text("프로젝트를 선택해주세요")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                Text("Xcode 프로젝트 폴더를 선택하면\n건강 점수와 개선 방향을 알려드립니다")
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+            }
+
+            if let onSelect = onSelectFolder {
+                Button(action: onSelect) {
+                    Label("프로젝트 폴더 선택", systemImage: "folder")
+                        .font(.headline)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+            }
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, minHeight: 400)
+    }
+
+    // MARK: - Analysis Result
+
+    private func analysisResultView(health: HealthScore) -> some View {
+        VStack(spacing: 20) {
+            // 헤더: 프로젝트명 + 마지막 분석 날짜
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(projectName)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                    if let dateStr = lastAnalysisDate {
+                        Text("마지막 분석: \(dateStr)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                Spacer()
+            }
+
+            // 건강 점수 카드
+            healthScoreCard(health: health)
+
+            // 3개 액션 카드
+            HStack(spacing: 12) {
+                actionCard(
+                    icon: "exclamationmark.triangle.fill",
+                    title: "지금 고쳐야 할 것",
+                    subtitle: actionItems.isEmpty ? "이슈 없음" : "\(actionItems.filter { $0.severity == .critical }.count)개 긴급 · \(actionItems.filter { $0.severity == .warning }.count)개 경고",
+                    color: .orange,
+                    destination: .actions
+                )
+                actionCard(
+                    icon: "list.bullet",
+                    title: "전체 현황",
+                    subtitle: "파일별 복잡도 목록",
+                    color: .blue,
+                    destination: .list
+                )
+                actionCard(
+                    icon: "arrow.left.arrow.right",
+                    title: "이전과 비교",
+                    subtitle: lastSnapshot != nil ? "기록 있음" : "첫 분석",
+                    color: .purple,
+                    destination: .compare
+                )
+            }
+        }
+    }
+
+    // MARK: - Health Score Card
+
+    private func healthScoreCard(health: HealthScore) -> some View {
+        VStack(spacing: 16) {
+            HStack(alignment: .center, spacing: 20) {
+                // 등급 + 점수
+                VStack(spacing: 4) {
+                    Text(health.grade.rawValue)
+                        .font(.system(size: 72, weight: .bold, design: .rounded))
+                        .foregroundColor(gradeColor(health.grade))
+
+                    HStack(spacing: 4) {
+                        Text(String(format: "%.0f점", health.overall))
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                        if let trend = healthTrend {
+                            trendBadge(trend: trend)
+                        }
+                    }
+                    Text(health.statusLabel)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(gradeColor(health.grade).opacity(0.15))
+                        .cornerRadius(8)
+                }
+
+                Divider()
+                    .frame(height: 100)
+
+                // 4개 컴포넌트 바
+                VStack(alignment: .leading, spacing: 10) {
+                    componentBar(label: "복잡도", value: health.complexityComponent, color: .orange)
+                    componentBar(label: "의존성", value: health.dependencyComponent, color: .blue)
+                    componentBar(label: "메모리", value: health.memoryComponent, color: .red)
+                    componentBar(label: "품질", value: health.qualityComponent, color: .green)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(20)
+        .background(Color(.controlBackgroundColor))
+        .cornerRadius(12)
+    }
+
+    private func componentBar(label: String, value: Double, color: Color) -> some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .frame(width: 40, alignment: .leading)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.secondary.opacity(0.15))
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(color.opacity(0.8))
+                        .frame(width: geo.size.width * min(value / 100.0, 1.0))
+                }
+            }
+            .frame(height: 6)
+            Text(String(format: "%.0f", value))
+                .font(.caption2)
+                .foregroundColor(.secondary)
+                .frame(width: 28, alignment: .trailing)
+        }
+    }
+
+    private func trendBadge(trend: Double) -> some View {
+        let isUp = trend >= 0
+        return HStack(spacing: 2) {
+            Image(systemName: isUp ? "arrow.up" : "arrow.down")
+            Text(String(format: "%+.0f", trend))
+        }
+        .font(.caption2)
+        .fontWeight(.semibold)
+        .foregroundColor(isUp ? .green : .red)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background((isUp ? Color.green : Color.red).opacity(0.12))
+        .cornerRadius(6)
+    }
+
+    private func gradeColor(_ grade: HealthGrade) -> Color {
+        switch grade {
+        case .a: return .green
+        case .b: return .blue
+        case .c: return .yellow
+        case .d: return .orange
+        case .f: return .red
+        }
+    }
+
+    // MARK: - Action Card
+
+    private func actionCard(
+        icon: String,
+        title: String,
+        subtitle: String,
+        color: Color,
+        destination: ViewMode
+    ) -> some View {
+        Button { onNavigate(destination) } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(color)
+                Text(title)
+                    .font(.callout)
+                    .fontWeight(.semibold)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+                Spacer()
+                HStack {
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 110, alignment: .leading)
+            .background(Color(.controlBackgroundColor))
+            .cornerRadius(10)
+        }
+        .buttonStyle(.plain)
+    }
+}

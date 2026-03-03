@@ -17,6 +17,7 @@ struct DependencyStats {
     let outDegree:   [String: Int]   // 이 파일이 참조하는 파일 수
     let totalEdges:  Int
     let isolatedFilePaths: [String]  // 연결이 없는 파일
+    let orphanedFilePaths: [String]  // inDegree == 0인 파일 (진입점 제외)
 
     var mostReferenced: (path: String, count: Int)? {
         inDegree.max(by: { $0.value < $1.value }).map { ($0.key, $0.value) }
@@ -41,12 +42,19 @@ struct DependencyStats {
             .filter { !connected.contains($0.filePath) }
             .map { $0.filePath }
 
+        let entryPointSuffixes = ["App.swift", "AppDelegate.swift", "main.swift", "SceneDelegate.swift"]
+        let orphaned = analyses.filter { file in
+            inDeg[file.filePath] == nil &&
+            !entryPointSuffixes.contains(where: { file.fileName.hasSuffix($0) })
+        }.map(\.filePath)
+
         return DependencyStats(
             cyclicNodes:       DependencyAnalyzer.findCyclicNodes(from: edges),
             inDegree:          inDeg,
             outDegree:         outDeg,
             totalEdges:        edges.count,
-            isolatedFilePaths: isolated
+            isolatedFilePaths: isolated,
+            orphanedFilePaths: orphaned
         )
     }
 }

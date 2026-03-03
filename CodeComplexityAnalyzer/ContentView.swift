@@ -1,43 +1,51 @@
 import SwiftUI
 import AppKit
 
+// MARK: - ViewMode (module level)
+
+enum ViewMode: String, CaseIterable {
+    case home         = "홈"
+    case actions      = "할 일"
+    case compare      = "비교"
+    case list         = "목록"
+    case chart        = "차트"
+    case graph        = "관계도"
+    case memory       = "메모리"
+    case architecture = "아키텍처"
+    case quality      = "품질"
+    case functions    = "함수"
+    case gitHistory   = "변경이력"
+    case orphan       = "고아 파일"
+
+    var icon: String {
+        switch self {
+        case .home:         return "house"
+        case .actions:      return "list.bullet.clipboard"
+        case .compare:      return "arrow.left.arrow.right"
+        case .list:         return "list.bullet"
+        case .chart:        return "chart.bar.xaxis"
+        case .graph:        return "network"
+        case .memory:       return "memorychip"
+        case .architecture: return "building.columns"
+        case .quality:      return "checkmark.seal"
+        case .functions:    return "function"
+        case .gitHistory:   return "clock.arrow.circlepath"
+        case .orphan:       return "xmark.doc"
+        }
+    }
+}
+
 struct ContentView: View {
     @StateObject private var viewModel = AnalyzerViewModel()
     @State private var selectedSort: SortOption = .complexity
     @State private var searchText = ""
-    @State private var viewMode: ViewMode = .list
-    
+    @State private var viewMode: ViewMode = .home
+
     enum SortOption: String, CaseIterable {
         case complexity = "복잡도"
         case lines = "라인 수"
         case functions = "함수 수"
         case name = "이름"
-    }
-
-    enum ViewMode: String, CaseIterable {
-        case list         = "목록"
-        case chart        = "차트"
-        case graph        = "관계도"
-        case memory       = "메모리"
-        case architecture = "아키텍처"
-        case quality      = "품질"
-        case functions    = "함수"
-        case gitHistory   = "변경이력"
-        case todo         = "TODO"
-
-        var icon: String {
-            switch self {
-            case .list:         return "list.bullet"
-            case .chart:        return "chart.bar.xaxis"
-            case .graph:        return "network"
-            case .memory:       return "memorychip"
-            case .architecture: return "building.columns"
-            case .quality:      return "checkmark.seal"
-            case .functions:    return "function"
-            case .gitHistory:   return "clock.arrow.circlepath"
-            case .todo:         return "checklist"
-            }
-        }
     }
     
     var filteredAndSortedAnalyses: [FileAnalysis] {
@@ -72,7 +80,7 @@ struct ContentView: View {
 
             Divider()
 
-            // 요약 정보
+            // 요약 정보 (분석 완료 후)
             if let summary = viewModel.summary {
                 summaryView(summary: summary)
                 Divider()
@@ -81,14 +89,31 @@ struct ContentView: View {
             // 상태별 분기
             if viewModel.isAnalyzing {
                 analyzingView
-            } else if viewModel.analyses.isEmpty {
+            } else if viewModel.analyses.isEmpty && viewMode != .home && viewMode != .orphan {
                 emptyStateView
             } else {
-                // 뷰 모드 선택 바
                 viewModeBar
                 Divider()
 
                 switch viewMode {
+                case .home:
+                    HomeView(
+                        healthScore:    viewModel.healthScore,
+                        healthTrend:    viewModel.healthTrend,
+                        actionItems:    viewModel.actionItems,
+                        selectedPath:   viewModel.selectedPath,
+                        lastSnapshot:   viewModel.snapshots.filter { $0.projectPath == (viewModel.selectedPath ?? "") }.first,
+                        onNavigate:     { navigate(to: $0) },
+                        onSelectFolder: { viewModel.selectFolder() }
+                    )
+                case .actions:
+                    ActionsView(items: viewModel.actionItems)
+                case .compare:
+                    CompareView(
+                        snapshots:     viewModel.snapshots,
+                        currentHealth: viewModel.healthScore,
+                        selectedPath:  viewModel.selectedPath
+                    )
                 case .list:
                     controlBar
                     Divider()
@@ -122,12 +147,16 @@ struct ContentView: View {
                         ProgressView("변경 이력 분석 중...")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                case .todo:
-                    TodoView(items: viewModel.todoItems)
+                case .orphan:
+                    OrphanedFilesView(files: viewModel.orphanedFiles)
                 }
             }
         }
         .frame(minWidth: 1100, minHeight: 650)
+    }
+
+    private func navigate(to mode: ViewMode) {
+        viewMode = mode
     }
 
     private var viewModeBar: some View {
@@ -163,72 +192,82 @@ struct ContentView: View {
             Image(systemName: "chart.bar.doc.horizontal")
                 .font(.title2)
                 .foregroundColor(.blue)
-            
+
             Text("코드 복잡도 분석기")
                 .font(.title2)
                 .fontWeight(.bold)
-            
-            Spacer()
-            
-            if viewModel.selectedPath != nil {
-                // 내보내기 메뉴 (분석 완료 후만 표시)
-                if !viewModel.analyses.isEmpty {
-                    Menu {
-                        ForEach(ExportFormat.allCases) { fmt in
-                            Button {
-                                viewModel.exportReport(format: fmt)
-                            } label: {
-                                Label(fmt.rawValue, systemImage: fmt.icon)
-                            }
-                        }
-                    } label: {
-                        Label("내보내기", systemImage: "square.and.arrow.up")
-                    }
-                    .buttonStyle(.bordered)
-                    .menuStyle(.borderlessButton)
-                    .fixedSize()
-                }
 
-                Button(action: { viewModel.selectFolder() }) {
-                    Label("다른 폴더 선택", systemImage: "folder")
+            Spacer()
+
+            // 내보내기 메뉴 (분석 완료 후만 표시)
+            if !viewModel.analyses.isEmpty {
+                Menu {
+                    ForEach(ExportFormat.allCases) { fmt in
+                        Button {
+                            viewModel.exportReport(format: fmt)
+                        } label: {
+                            Label(fmt.rawValue, systemImage: fmt.icon)
+                        }
+                    }
+                } label: {
+                    Label("내보내기", systemImage: "square.and.arrow.up")
                 }
                 .buttonStyle(.bordered)
+                .menuStyle(.borderlessButton)
+                .fixedSize()
             }
+
+            Button(action: { viewModel.selectFolder() }) {
+                Label(
+                    viewModel.selectedPath != nil ? "다른 폴더 선택" : "프로젝트 폴더 선택",
+                    systemImage: "folder"
+                )
+            }
+            .buttonStyle(.bordered)
         }
         .padding()
         .background(Color(.windowBackgroundColor))
     }
     
     private func summaryView(summary: ProjectSummary) -> some View {
-        HStack(spacing: 30) {
+        HStack(spacing: 20) {
+            // 건강 점수 (상시 표시)
+            if let health = viewModel.healthScore {
+                healthScoreBadge(health: health)
+                Divider().frame(height: 40)
+            }
+
             summaryCard(
                 title: "총 파일",
                 value: "\(summary.totalFiles)",
                 icon: "doc.text",
                 color: .blue
             )
-            
+
             summaryCard(
                 title: "총 라인",
                 value: NumberFormatter.localizedString(from: NSNumber(value: summary.totalLines), number: .decimal),
                 icon: "text.alignleft",
                 color: .green
             )
-            
+
             summaryCard(
                 title: "총 함수",
                 value: "\(summary.totalFunctions)",
                 icon: "function",
                 color: .orange
             )
-            
-            summaryCard(
-                title: "평균 복잡도",
-                value: String(format: "%.1f", summary.averageComplexity),
-                icon: "gauge",
-                color: .purple
-            )
-            
+
+            HStack(spacing: 4) {
+                summaryCard(
+                    title: "평균 복잡도",
+                    value: String(format: "%.1f", summary.averageComplexity),
+                    icon: "gauge",
+                    color: .purple
+                )
+                MetricInfoButton(key: "cyclomaticComplexity")
+            }
+
             if let mostComplex = summary.mostComplexFile {
                 VStack(alignment: .leading, spacing: 4) {
                     Label("가장 복잡한 파일", systemImage: "exclamationmark.triangle")
@@ -244,6 +283,41 @@ struct ContentView: View {
         }
         .padding()
         .background(Color(.controlBackgroundColor))
+    }
+
+    private func healthScoreBadge(health: HealthScore) -> some View {
+        HStack(spacing: 6) {
+            Text(health.grade.rawValue)
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundColor(healthGradeColor(health.grade))
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 4) {
+                    Text(String(format: "%.0f점", health.overall))
+                        .font(.callout)
+                        .fontWeight(.semibold)
+                    if let trend = viewModel.healthTrend {
+                        Text(String(format: "%+.0f", trend))
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundColor(trend >= 0 ? .green : .red)
+                    }
+                }
+                Text("건강 점수")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            MetricInfoButton(key: "healthScore")
+        }
+    }
+
+    private func healthGradeColor(_ grade: HealthGrade) -> Color {
+        switch grade {
+        case .a: return .green
+        case .b: return .blue
+        case .c: return .yellow
+        case .d: return .orange
+        case .f: return .red
+        }
     }
     
     private func summaryCard(title: String, value: String, icon: String, color: Color) -> some View {

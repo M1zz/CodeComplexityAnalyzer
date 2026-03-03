@@ -21,12 +21,16 @@
 		AA0012 /* ArchitectureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0012 /* ArchitectureView.swift */; };
 		AA0013 /* FunctionAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0013 /* FunctionAnalyzer.swift */; };
 		AA0014 /* FunctionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0014 /* FunctionView.swift */; };
-		AA0015 /* TodoAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0015 /* TodoAnalyzer.swift */; };
-		AA0016 /* TodoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0016 /* TodoView.swift */; };
-		AA0017 /* CodeQualityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0017 /* CodeQualityAnalyzer.swift */; };
+AA0017 /* CodeQualityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0017 /* CodeQualityAnalyzer.swift */; };
 		AA0018 /* CodeQualityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0018 /* CodeQualityView.swift */; };
 		AA0019 /* GitHistoryAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0019 /* GitHistoryAnalyzer.swift */; };
 		AA0020 /* GitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0020 /* GitHistoryView.swift */; };
+		AA0021 /* HealthScoreCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0021 /* HealthScoreCalculator.swift */; };
+		AA0022 /* MetricInfoButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0022 /* MetricInfoButton.swift */; };
+		AA0023 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0023 /* HomeView.swift */; };
+		AA0024 /* ActionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0024 /* ActionsView.swift */; };
+		AA0025 /* CompareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0025 /* CompareView.swift */; };
+		AA0026 /* OrphanedFilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0026 /* OrphanedFilesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,12 +49,16 @@
 		BB0012 /* ArchitectureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchitectureView.swift; sourceTree = "<group>"; };
 		BB0013 /* FunctionAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionAnalyzer.swift; sourceTree = "<group>"; };
 		BB0014 /* FunctionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionView.swift; sourceTree = "<group>"; };
-		BB0015 /* TodoAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoAnalyzer.swift; sourceTree = "<group>"; };
-		BB0016 /* TodoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoView.swift; sourceTree = "<group>"; };
-		BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeQualityAnalyzer.swift; sourceTree = "<group>"; };
+BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeQualityAnalyzer.swift; sourceTree = "<group>"; };
 		BB0018 /* CodeQualityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeQualityView.swift; sourceTree = "<group>"; };
 		BB0019 /* GitHistoryAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHistoryAnalyzer.swift; sourceTree = "<group>"; };
 		BB0020 /* GitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHistoryView.swift; sourceTree = "<group>"; };
+		BB0021 /* HealthScoreCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthScoreCalculator.swift; sourceTree = "<group>"; };
+		BB0022 /* MetricInfoButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricInfoButton.swift; sourceTree = "<group>"; };
+		BB0023 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		BB0024 /* ActionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionsView.swift; sourceTree = "<group>"; };
+		BB0025 /* CompareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompareView.swift; sourceTree = "<group>"; };
+		BB0026 /* OrphanedFilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrphanedFilesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,12 +97,16 @@
 				BB0012 /* ArchitectureView.swift */,
 				BB0013 /* FunctionAnalyzer.swift */,
 				BB0014 /* FunctionView.swift */,
-				BB0015 /* TodoAnalyzer.swift */,
-				BB0016 /* TodoView.swift */,
 				BB0017 /* CodeQualityAnalyzer.swift */,
 				BB0018 /* CodeQualityView.swift */,
 				BB0019 /* GitHistoryAnalyzer.swift */,
 				BB0020 /* GitHistoryView.swift */,
+				BB0021 /* HealthScoreCalculator.swift */,
+				BB0022 /* MetricInfoButton.swift */,
+				BB0023 /* HomeView.swift */,
+				BB0024 /* ActionsView.swift */,
+				BB0025 /* CompareView.swift */,
+			BB0026 /* OrphanedFilesView.swift */,
 			);
 			path = CodeComplexityAnalyzer;
 			sourceTree = "<group>";
@@ -189,12 +201,16 @@
 				AA0012 /* ArchitectureView.swift in Sources */,
 				AA0013 /* FunctionAnalyzer.swift in Sources */,
 				AA0014 /* FunctionView.swift in Sources */,
-				AA0015 /* TodoAnalyzer.swift in Sources */,
-				AA0016 /* TodoView.swift in Sources */,
 				AA0017 /* CodeQualityAnalyzer.swift in Sources */,
 				AA0018 /* CodeQualityView.swift in Sources */,
 				AA0019 /* GitHistoryAnalyzer.swift in Sources */,
 				AA0020 /* GitHistoryView.swift in Sources */,
+				AA0021 /* HealthScoreCalculator.swift in Sources */,
+				AA0022 /* MetricInfoButton.swift in Sources */,
+				AA0023 /* HomeView.swift in Sources */,
+				AA0024 /* ActionsView.swift in Sources */,
+				AA0025 /* CompareView.swift in Sources */,
+			AA0026 /* OrphanedFilesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

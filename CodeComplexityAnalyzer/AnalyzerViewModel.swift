@@ -46,15 +46,19 @@ class AnalyzerViewModel: ObservableObject {
     @Published var leakIssues:      [MemoryLeakIssue] = []
     @Published var archReport:       ArchReport?
     @Published var functions:       [FunctionInfo]    = []
-    @Published var todoItems:       [TodoItem]        = []
-    @Published var qualityReport:    CodeQualityReport?
+@Published var qualityReport:    CodeQualityReport?
     @Published var gitHistoryReport: GitHistoryReport?
     @Published var isAnalyzing = false
     @Published var selectedPath: String?
+    @Published var healthScore: HealthScore?
+    @Published var actionItems: [ActionItem] = []
+    @Published var snapshots: [ProjectSnapshot] = []
+    @Published var healthTrend: Double? = nil
+    @Published var orphanedFiles: [FileAnalysis] = []
 
     private let analyzer = CodeAnalyzer()
 
-    init() {}
+    init() { loadSnapshots() }
 
     // MARK: - 폴더 선택
 
@@ -80,7 +84,8 @@ class AnalyzerViewModel: ObservableObject {
     func analyzeProject(at url: URL) async {
         isAnalyzing = true
         analyses = []; summary = nil; dependencyEdges = []; leakIssues = []; archReport = nil
-        functions = []; todoItems = []; qualityReport = nil; gitHistoryReport = nil
+        functions = []; qualityReport = nil; gitHistoryReport = nil
+        healthScore = nil; actionItems = []; healthTrend = nil; orphanedFiles = []
 
         let results = await analyzer.analyzeProject(at: url)
         analyses = results
@@ -91,6 +96,9 @@ class AnalyzerViewModel: ObservableObject {
             depAnalyzer.analyze(files: results)
         }.value
         dependencyEdges = edges
+        let depStats = DependencyStats.compute(analyses: results, edges: edges)
+        let orphanedPaths = Set(depStats.orphanedFilePaths)
+        orphanedFiles = results.filter { orphanedPaths.contains($0.filePath) }
 
         let leaks = await Task.detached(priority: .userInitiated) {
             MemoryLeakAnalyzer().analyze(files: results)
@@ -107,11 +115,6 @@ class AnalyzerViewModel: ObservableObject {
         }.value
         functions = funcs
 
-        let todos = await Task.detached(priority: .userInitiated) {
-            TodoAnalyzer().analyze(files: results)
-        }.value
-        todoItems = todos
-
         let quality = await Task.detached(priority: .userInitiated) {
             CodeQualityAnalyzer().analyze(files: results, functions: funcs)
         }.value
@@ -122,7 +125,64 @@ class AnalyzerViewModel: ObservableObject {
         }.value
         gitHistoryReport = gitRep
 
+        // 건강 점수 & 액션 생성
+        let calculator = HealthScoreCalculator()
+        let health = calculator.calculate(
+            analyses: results,
+            edges: edges,
+            leaks: leaks,
+            qualityReport: quality
+        )
+        healthScore = health
+        let projectSnapshots = snapshots.filter { $0.projectPath == url.path }
+        healthTrend = projectSnapshots.first.map { health.overall - $0.healthScore }
+        actionItems = calculator.generateActions(
+            analyses: results,
+            edges: edges,
+            leaks: leaks,
+            archReport: archRep,
+            qualityReport: quality,
+            functions: funcs
+        )
+        saveSnapshot(health: health, projectPath: url.path)
+
         isAnalyzing = false
+    }
+
+    // MARK: - 스냅샷
+
+    func loadSnapshots() {
+        guard let data    = UserDefaults.standard.data(forKey: "cca_snapshots"),
+              let decoded = try? JSONDecoder().decode([ProjectSnapshot].self, from: data)
+        else { return }
+        snapshots = decoded
+    }
+
+    private func saveSnapshot(health: HealthScore, projectPath: String) {
+        let snapshot = ProjectSnapshot(
+            id:                   UUID(),
+            date:                 Date(),
+            projectPath:          projectPath,
+            healthScore:          health.overall,
+            grade:                health.grade.rawValue,
+            complexityScore:      health.complexityComponent,
+            dependencyScore:      health.dependencyComponent,
+            memoryScore:          health.memoryComponent,
+            qualityScore:         health.qualityComponent,
+            totalFiles:           summary?.totalFiles      ?? 0,
+            totalFunctions:       summary?.totalFunctions  ?? 0,
+            averageComplexity:    summary?.averageComplexity ?? 0,
+            memoryIssueCount:     leakIssues.filter { $0.severity == .high }.count,
+            qualityOverallScore:  qualityReport?.overallScore ?? 0
+        )
+        var current = snapshots.filter { $0.projectPath == projectPath }
+        current.insert(snapshot, at: 0)
+        if current.count > 5 { current = Array(current.prefix(5)) }
+        let others = snapshots.filter { $0.projectPath != projectPath }
+        snapshots = current + others
+        if let data = try? JSONEncoder().encode(snapshots) {
+            UserDefaults.standard.set(data, forKey: "cca_snapshots")
+        }
     }
 
     // MARK: - 내보내기
