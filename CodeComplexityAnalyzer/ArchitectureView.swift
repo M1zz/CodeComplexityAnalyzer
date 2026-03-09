@@ -44,7 +44,7 @@ struct ArchitectureView: View {
                     Text(report.pattern.rawValue)
                         .font(.title3).fontWeight(.bold)
                     Text(report.pattern.description)
-                        .font(.caption).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                         .lineLimit(2)
                 }
             }
@@ -55,11 +55,11 @@ struct ArchitectureView: View {
             // 신뢰도
             VStack(spacing: 4) {
                 Text("패턴 신뢰도")
-                    .font(.caption2).foregroundColor(.secondary)
+                    .font(.body).foregroundColor(.secondary)
                 ConfidenceMeter(value: report.patternConfidence)
                     .frame(width: 120, height: 8)
                 Text(String(format: "%.0f%%", report.patternConfidence * 100))
-                    .font(.caption).fontWeight(.semibold)
+                    .font(.body).fontWeight(.semibold)
             }
 
             Divider().frame(height: 40)
@@ -74,12 +74,12 @@ struct ArchitectureView: View {
             // 종합 건강 점수
             VStack(spacing: 2) {
                 Text("종합 점수")
-                    .font(.caption2).foregroundColor(.secondary)
+                    .font(.body).foregroundColor(.secondary)
                 Text(String(format: "%.0f", report.healthScore))
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(scoreColor(report.healthScore))
                 Text("/ 100")
-                    .font(.caption2).foregroundColor(.secondary)
+                    .font(.body).foregroundColor(.secondary)
             }
         }
         .padding(.horizontal, 20)
@@ -90,7 +90,7 @@ struct ArchitectureView: View {
     private func healthGauge(_ label: String, score: Double, color: Color) -> some View {
         VStack(spacing: 3) {
             Text(label)
-                .font(.caption2).foregroundColor(.secondary)
+                .font(.body).foregroundColor(.secondary)
             ZStack {
                 Circle()
                     .stroke(Color.secondary.opacity(0.2), lineWidth: 5)
@@ -144,7 +144,7 @@ struct ArchitectureView: View {
                 .foregroundStyle(barColor(for: item.layer).gradient)
                 .annotation(position: .trailing) {
                     Text("\(item.count)")
-                        .font(.caption2).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                 }
             }
             .chartXAxis(.hidden)
@@ -161,7 +161,7 @@ struct ArchitectureView: View {
                 Spacer()
                 if selectedLayer != nil {
                     Button("전체 보기") { selectedLayer = nil }
-                        .font(.caption).buttonStyle(.plain).foregroundColor(.accentColor)
+                        .font(.body).buttonStyle(.plain).foregroundColor(.accentColor)
                 }
             }
 
@@ -232,7 +232,7 @@ struct ArchitectureView: View {
                 } label: {
                     Label(selectedIssueType?.rawValue ?? "이슈 유형",
                           systemImage: "line.3.horizontal.decrease.circle")
-                        .font(.caption)
+                        .font(.body)
                 }
                 .menuStyle(.borderlessButton).fixedSize()
 
@@ -267,7 +267,7 @@ struct ArchitectureView: View {
         HStack(spacing: 3) {
             Circle().fill(color).frame(width: 6, height: 6)
             Text("\(count)")
-                .font(.caption2).fontWeight(.semibold)
+                .font(.body).fontWeight(.semibold)
         }
     }
 
@@ -278,7 +278,7 @@ struct ArchitectureView: View {
             Text("감지된 이슈 없음")
                 .font(.title3).fontWeight(.semibold)
             Text("아키텍처 관점에서 문제가 발견되지 않았습니다.")
-                .font(.caption).foregroundColor(.secondary)
+                .font(.body).foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -336,17 +336,17 @@ struct LayerGroupView: View {
             Button(action: onTap) {
                 HStack(spacing: 8) {
                     Image(systemName: layer.icon)
-                        .font(.caption)
+                        .font(.body)
                         .foregroundColor(isSelected ? .white : .accentColor)
                         .frame(width: 18)
                     Text(layer.rawValue)
-                        .font(.caption).fontWeight(.semibold)
+                        .font(.body).fontWeight(.semibold)
                     Spacer()
                     Text("\(files.count)개")
-                        .font(.caption2)
+                        .font(.body)
                         .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
                     Image(systemName: isSelected ? "chevron.up" : "chevron.down")
-                        .font(.caption2)
+                        .font(.body)
                         .foregroundColor(isSelected ? .white.opacity(0.7) : .secondary)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 6)
@@ -369,7 +369,7 @@ struct LayerGroupView: View {
                             Spacer()
                             if let reason = info.reasons.first {
                                 Text(reason)
-                                    .font(.caption2)
+                                    .font(.body)
                                     .foregroundColor(.secondary)
                                     .lineLimit(1)
                             }
@@ -425,20 +425,20 @@ struct ArchIssueRow: View {
                             .fontWeight(.medium)
                             .lineLimit(1)
                         Text(issue.type.rawValue)
-                            .font(.caption2).foregroundColor(.secondary)
+                            .font(.body).foregroundColor(.secondary)
                     }
 
                     Spacer()
 
                     Text(issue.severity.rawValue)
-                        .font(.caption2)
+                        .font(.body)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(severityColor.opacity(0.15))
                         .foregroundColor(severityColor)
                         .cornerRadius(4)
 
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption2).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                 }
                 .padding(.vertical, 8).padding(.trailing, 12)
                 .background(Color(.controlBackgroundColor))
@@ -451,12 +451,12 @@ struct ArchIssueRow: View {
                     Divider()
 
                     Label(issue.description, systemImage: "info.circle")
-                        .font(.caption).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Label("수정 방법", systemImage: "lightbulb")
-                            .font(.caption).fontWeight(.semibold)
+                            .font(.body).fontWeight(.semibold)
                             .foregroundColor(.yellow)
                         Text(issue.suggestion)
                             .font(.system(.caption, design: .monospaced))
@@ -470,7 +470,7 @@ struct ArchIssueRow: View {
                     ArchCopyPromptButton(issue: issue)
 
                     Text(issue.filePath)
-                        .font(.caption2).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                         .lineLimit(1).truncationMode(.middle)
                 }
                 .padding(.horizontal, 12).padding(.bottom, 12)
@@ -509,7 +509,7 @@ struct ArchCopyPromptButton: View {
                 copied ? "복사됨!" : "AI 수정 프롬프트 복사",
                 systemImage: copied ? "checkmark.circle.fill" : "doc.on.clipboard"
             )
-            .font(.caption).fontWeight(.semibold)
+            .font(.body).fontWeight(.semibold)
             .foregroundColor(copied ? .green : .accentColor)
         }
         .buttonStyle(.bordered).controlSize(.small)

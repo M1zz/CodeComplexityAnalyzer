@@ -100,7 +100,7 @@ struct MemoryLeakView: View {
                         selectedIssueType?.rawValue ?? "이슈 타입",
                         systemImage: selectedIssueType?.icon ?? "line.3.horizontal.decrease.circle"
                     )
-                    .font(.caption)
+                    .font(.body)
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
@@ -117,7 +117,7 @@ struct MemoryLeakView: View {
                         selectedSeverity?.rawValue ?? "심각도",
                         systemImage: "exclamationmark.triangle"
                     )
-                    .font(.caption)
+                    .font(.body)
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
@@ -125,8 +125,10 @@ struct MemoryLeakView: View {
                 Spacer()
 
                 Text("\(filtered.count)개 이슈")
-                    .font(.caption)
+                    .font(.body)
                     .foregroundColor(.secondary)
+
+                BulkMemoryPromptButton(issues: filtered)
             }
         }
         .padding(10)
@@ -157,7 +159,7 @@ struct MemoryLeakView: View {
                         .font(.title2).fontWeight(.bold)
                         .foregroundColor(sev.color)
                     Text(sev.rawValue)
-                        .font(.caption2)
+                        .font(.body)
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
@@ -176,7 +178,7 @@ struct MemoryLeakView: View {
     private var issueTypeChart: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("이슈 유형별 분포")
-                .font(.caption).fontWeight(.semibold).foregroundColor(.secondary)
+                .font(.body).fontWeight(.semibold).foregroundColor(.secondary)
 
             let data: [(type: String, count: Int)] = MemoryLeakIssue.IssueType.allCases.compactMap { t in
                 let cnt = issues.filter { $0.issueType == t }.count
@@ -191,7 +193,7 @@ struct MemoryLeakView: View {
                 .foregroundStyle(Color.blue.gradient)
                 .annotation(position: .trailing) {
                     Text("\(item.count)")
-                        .font(.caption2).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                 }
             }
             .chartXAxis(.hidden)
@@ -206,7 +208,7 @@ struct MemoryLeakView: View {
     private var topFilesChart: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("파일별 이슈 수 (Top 5)")
-                .font(.caption).fontWeight(.semibold).foregroundColor(.secondary)
+                .font(.body).fontWeight(.semibold).foregroundColor(.secondary)
 
             let fileCounts = Dictionary(grouping: issues, by: \.fileName)
                 .map { (name: $0.key, count: $0.value.count) }
@@ -221,7 +223,7 @@ struct MemoryLeakView: View {
                 .foregroundStyle(Color.orange.gradient)
                 .annotation(position: .trailing) {
                     Text("\(item.count)")
-                        .font(.caption2).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                 }
             }
             .chartXAxis(.hidden)
@@ -267,7 +269,7 @@ struct IssueRow: View {
                                 .foregroundColor(.secondary)
                         }
                         Text(issue.issueType.rawValue)
-                            .font(.caption2)
+                            .font(.body)
                             .foregroundColor(.secondary)
                     }
 
@@ -275,14 +277,14 @@ struct IssueRow: View {
 
                     // 심각도 뱃지
                     Text(issue.severity.rawValue)
-                        .font(.caption2)
+                        .font(.body)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(issue.severity.color.opacity(0.15))
                         .foregroundColor(issue.severity.color)
                         .cornerRadius(4)
 
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption2)
+                        .font(.body)
                         .foregroundColor(.secondary)
                 }
                 .padding(.vertical, 8)
@@ -307,13 +309,13 @@ struct IssueRow: View {
 
                     // 설명
                     Label(issue.description, systemImage: "info.circle")
-                        .font(.caption)
+                        .font(.body)
                         .foregroundColor(.secondary)
 
                     // 제안
                     VStack(alignment: .leading, spacing: 4) {
                         Label("수정 제안", systemImage: "lightbulb")
-                            .font(.caption).fontWeight(.semibold)
+                            .font(.body).fontWeight(.semibold)
                             .foregroundColor(.yellow)
 
                         Text(issue.suggestion)
@@ -326,7 +328,7 @@ struct IssueRow: View {
 
                     // 파일 경로
                     Text(issue.filePath)
-                        .font(.caption2)
+                        .font(.body)
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -341,6 +343,52 @@ struct IssueRow: View {
             }
         }
         .background(Color(.windowBackgroundColor))
+    }
+}
+
+// MARK: - 전체 프롬프트 복사 버튼
+
+fileprivate struct BulkMemoryPromptButton: View {
+    let issues: [MemoryLeakIssue]
+    @State private var copied = false
+
+    var body: some View {
+        Button {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(makePrompt(), forType: .string)
+            withAnimation { copied = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation { copied = false }
+            }
+        } label: {
+            Label(
+                copied ? "복사됨!" : "전체 복사",
+                systemImage: copied ? "checkmark.circle.fill" : "doc.on.clipboard"
+            )
+            .font(.body).fontWeight(.semibold)
+            .foregroundColor(copied ? .green : .accentColor)
+        }
+        .buttonStyle(.bordered).controlSize(.small)
+    }
+
+    private func makePrompt() -> String {
+        let issueList = issues.enumerated().map { i, issue in
+            let sev = issue.severity == .high ? "🔴 높음" : issue.severity == .medium ? "🟠 중간" : "🟡 낮음"
+            return """
+            \(i + 1). [\(sev)] \(issue.issueType.rawValue) — \(issue.fileName):\(issue.lineNumber)
+               문제: \(issue.description)
+               코드: \(issue.lineContent)
+               수정: \(issue.suggestion)
+               파일: \(issue.filePath)
+            """
+        }.joined(separator: "\n\n")
+
+        return """
+        아래는 Swift 프로젝트의 메모리 릭 분석 결과입니다 (\(issues.count)개).
+        각 항목을 순서대로 수정해줘. 수정 시 실제 코드 변경 사항도 함께 제시해줘.
+
+        \(issueList)
+        """
     }
 }
 
@@ -363,7 +411,7 @@ struct CopyPromptButton: View {
                 copied ? "복사됨!" : "AI 수정 프롬프트 복사",
                 systemImage: copied ? "checkmark.circle.fill" : "doc.on.clipboard"
             )
-            .font(.caption)
+            .font(.body)
             .fontWeight(.semibold)
             .foregroundColor(copied ? .green : .accentColor)
         }

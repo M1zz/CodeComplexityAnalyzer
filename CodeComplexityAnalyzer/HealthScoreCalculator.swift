@@ -93,9 +93,12 @@ struct HealthScoreCalculator {
             ))
         }
 
-        // 4. high 심각도 메모리 이슈 (상위 5개)
+        // 4. high 심각도 메모리 이슈 — 파일×이슈타입 단위로 중복 제거 후 상위 5개
+        struct MemKey: Hashable { let path: String; let type: MemoryLeakIssue.IssueType }
+        var seen = Set<MemKey>()
         let highMemoryIssues = leaks
             .filter { $0.severity == .high }
+            .filter { seen.insert(MemKey(path: $0.filePath, type: $0.issueType)).inserted }
             .prefix(5)
         for issue in highMemoryIssues {
             actions.append(ActionItem(
@@ -180,9 +183,22 @@ struct HealthScoreCalculator {
     }
 
     private func calcMemoryScore(leaks: [MemoryLeakIssue]) -> Double {
-        var penalty = 0.0
+        // 파일 × 이슈타입 조합 단위로 중복 제거 후 패널티 합산
+        // — 같은 파일에 동일 이슈가 N번 반복돼도 1회로 계산
+        struct Key: Hashable { let path: String; let type: MemoryLeakIssue.IssueType }
+        var worst = [Key: MemoryLeakIssue.Severity]()
         for leak in leaks {
-            switch leak.severity {
+            let key = Key(path: leak.filePath, type: leak.issueType)
+            if let existing = worst[key] {
+                // 더 심각한 쪽 유지 (high > medium > low)
+                if leak.severity > existing { worst[key] = leak.severity }
+            } else {
+                worst[key] = leak.severity
+            }
+        }
+        var penalty = 0.0
+        for sev in worst.values {
+            switch sev {
             case .high:   penalty += 10
             case .medium: penalty += 4
             case .low:    penalty += 1

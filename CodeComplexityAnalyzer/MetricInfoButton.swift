@@ -9,7 +9,7 @@ struct MetricInfoButton: View {
             showPopover = true
         } label: {
             Image(systemName: "info.circle")
-                .font(.caption)
+                .font(.body)
                 .foregroundColor(.secondary)
         }
         .buttonStyle(.plain)

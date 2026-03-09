@@ -65,11 +65,11 @@ struct GitHistoryView: View {
             if !report.topAuthors.isEmpty {
                 Divider().frame(height: 40)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("주요 기여자").font(.caption2).foregroundColor(.secondary)
+                    Text("주요 기여자").font(.body).foregroundColor(.secondary)
                     HStack(spacing: 6) {
                         ForEach(report.topAuthors.prefix(3), id: \.self) { a in
                             Text(a)
-                                .font(.caption2)
+                                .font(.body)
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Color.blue.opacity(0.1)).cornerRadius(4)
                         }
@@ -84,7 +84,7 @@ struct GitHistoryView: View {
 
     private func metric(_ title: String, _ value: String, _ color: Color) -> some View {
         VStack(spacing: 2) {
-            Text(title).font(.caption2).foregroundColor(.secondary)
+            Text(title).font(.body).foregroundColor(.secondary)
             Text(value).font(.title3).fontWeight(.bold).foregroundColor(color)
         }
     }
@@ -124,11 +124,11 @@ struct GitHistoryView: View {
                 }
             } label: {
                 Label(selectedHotspot?.rawValue ?? "핫스팟 전체",
-                      systemImage: selectedHotspot?.icon ?? "flame").font(.caption)
+                      systemImage: selectedHotspot?.icon ?? "flame").font(.body)
             }.menuStyle(.borderlessButton).fixedSize()
 
             Spacer()
-            Text("\(filtered.count)개").font(.caption).foregroundColor(.secondary)
+            Text("\(filtered.count)개").font(.body).foregroundColor(.secondary)
         }
         .padding(10).background(Color(.windowBackgroundColor))
     }
@@ -150,7 +150,7 @@ struct GitHistoryView: View {
                 VStack(spacing: 4) {
                     Image(systemName: h.icon).font(.title3).foregroundColor(hotspotColor(h))
                     Text("\(cnt)").font(.title2).fontWeight(.bold).foregroundColor(hotspotColor(h))
-                    Text(h.rawValue).font(.caption2).foregroundColor(.secondary)
+                    Text(h.rawValue).font(.body).foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity).padding(10)
                 .background(hotspotColor(h).opacity(0.1)).cornerRadius(8)
@@ -160,13 +160,13 @@ struct GitHistoryView: View {
 
     private var topCommitChart: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("변경 빈도 Top 10").font(.caption).fontWeight(.semibold).foregroundColor(.secondary)
+            Text("변경 빈도 Top 10").font(.body).fontWeight(.semibold).foregroundColor(.secondary)
             let top = Array(report.fileChanges.prefix(10))
             Chart(top) { c in
                 BarMark(x: .value("커밋", c.commitCount), y: .value("파일", c.fileName))
                     .foregroundStyle(Color.red.gradient)
                     .annotation(position: .trailing) {
-                        Text("\(c.commitCount)").font(.caption2).foregroundColor(.secondary)
+                        Text("\(c.commitCount)").font(.body).foregroundColor(.secondary)
                     }
             }
             .chartXAxis(.hidden)
@@ -205,7 +205,7 @@ struct GitFileRow: View {
                             .font(.system(.body, design: .monospaced)).fontWeight(.medium)
                         if let date = change.lastModified {
                             Text("최근 수정: \(date.formatted(date: .abbreviated, time: .omitted))")
-                                .font(.caption2).foregroundColor(.secondary)
+                                .font(.body).foregroundColor(.secondary)
                         }
                     }
 
@@ -214,18 +214,18 @@ struct GitFileRow: View {
                     VStack(spacing: 2) {
                         Text("\(change.commitCount)")
                             .font(.title3).fontWeight(.bold).foregroundColor(hotspotColor)
-                        Text("커밋").font(.caption2).foregroundColor(.secondary)
+                        Text("커밋").font(.body).foregroundColor(.secondary)
                     }.frame(width: 50)
 
                     Text(change.hotspot.rawValue)
-                        .font(.caption2)
+                        .font(.body)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(hotspotColor.opacity(0.15))
                         .foregroundColor(hotspotColor)
                         .cornerRadius(4)
 
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption2).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                 }
                 .padding()
                 .background(Color(.controlBackgroundColor))
@@ -239,10 +239,10 @@ struct GitFileRow: View {
                     if !change.authors.isEmpty {
                         Label("기여자: " + change.authors.joined(separator: ", "),
                               systemImage: "person.2")
-                            .font(.caption).foregroundColor(.secondary)
+                            .font(.body).foregroundColor(.secondary)
                     }
                     Text(change.filePath)
-                        .font(.caption2).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                         .lineLimit(1).truncationMode(.middle)
                 }
                 .padding(.horizontal, 12).padding(.bottom, 10)

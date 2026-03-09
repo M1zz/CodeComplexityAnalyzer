@@ -62,18 +62,25 @@ struct ActionsView: View {
     // MARK: - Filter Bar
 
     private var categoryFilterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                filterChip(label: "전체", category: nil)
-                ForEach(ActionCategory.allCases, id: \.self) { cat in
-                    let count = items.filter { $0.category == cat }.count
-                    if count > 0 {
-                        filterChip(label: "\(cat.rawValue) \(count)", category: cat)
+        HStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    filterChip(label: "전체", category: nil)
+                    ForEach(ActionCategory.allCases, id: \.self) { cat in
+                        let count = items.filter { $0.category == cat }.count
+                        if count > 0 {
+                            filterChip(label: "\(cat.rawValue) \(count)", category: cat)
+                        }
                     }
                 }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
             }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
+
+            Divider().frame(height: 20)
+
+            BulkActionPromptButton(items: filteredItems)
+                .padding(.horizontal, 10)
         }
         .background(Color(.windowBackgroundColor))
     }
@@ -82,7 +89,7 @@ struct ActionsView: View {
         let isSelected = selectedCategory == category
         return Button { selectedCategory = category } label: {
             Text(label)
-                .font(.caption)
+                .font(.body)
                 .fontWeight(isSelected ? .semibold : .regular)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
@@ -111,7 +118,7 @@ struct ActionsView: View {
                     .foregroundStyle(categoryColor(entry.category))
                     .annotation(position: .trailing) {
                         Text(String(format: "%.0f", entry.impact))
-                            .font(.caption2)
+                            .font(.body)
                             .foregroundColor(.secondary)
                     }
                 }
@@ -128,10 +135,10 @@ struct ActionsView: View {
                             .fill(categoryColor(entry.category))
                             .frame(width: 8, height: 8)
                         Text(entry.category.rawValue)
-                            .font(.caption)
+                            .font(.body)
                         Spacer()
                         Text("\(entry.count)개")
-                            .font(.caption)
+                            .font(.body)
                             .foregroundColor(.secondary)
                     }
                 }
@@ -174,7 +181,7 @@ struct ActionRow: View {
                     HStack(spacing: 10) {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(item.fileName)
-                                .font(.caption)
+                                .font(.body)
                                 .foregroundColor(.secondary)
                             Text(item.title)
                                 .font(.callout)
@@ -191,7 +198,7 @@ struct ActionRow: View {
                         }
 
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.caption)
+                            .font(.body)
                             .foregroundColor(.secondary)
                     }
                     .padding(.horizontal, 12)
@@ -218,7 +225,7 @@ struct ActionRow: View {
 
     private var impactBadge: some View {
         Text("+\(String(format: "%.0f", item.impactScore))점")
-            .font(.caption2)
+            .font(.body)
             .fontWeight(.semibold)
             .foregroundColor(.green)
             .padding(.horizontal, 6)
@@ -229,7 +236,7 @@ struct ActionRow: View {
 
     private var categoryBadge: some View {
         Text(item.category.rawValue)
-            .font(.caption2)
+            .font(.body)
             .foregroundColor(.secondary)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
@@ -241,7 +248,7 @@ struct ActionRow: View {
         VStack(alignment: .leading, spacing: 6) {
             Divider()
             Text(item.detail)
-                .font(.caption)
+                .font(.body)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 16)
@@ -259,6 +266,51 @@ struct ActionRow: View {
         case .warning:  return .orange
         case .info:     return .blue
         }
+    }
+}
+
+// MARK: - BulkActionPromptButton
+
+fileprivate struct BulkActionPromptButton: View {
+    let items: [ActionItem]
+    @State private var copied = false
+
+    var body: some View {
+        Button {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(makePrompt(), forType: .string)
+            withAnimation { copied = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation { copied = false }
+            }
+        } label: {
+            Label(
+                copied ? "복사됨!" : "전체 복사",
+                systemImage: copied ? "checkmark.circle.fill" : "doc.on.clipboard"
+            )
+            .font(.body).fontWeight(.semibold)
+            .foregroundColor(copied ? .green : .accentColor)
+        }
+        .buttonStyle(.bordered).controlSize(.small)
+    }
+
+    private func makePrompt() -> String {
+        let taskList = items.enumerated().map { i, item in
+            let sev = item.severity == .critical ? "🔴 긴급" : item.severity == .warning ? "🟠 경고" : "🔵 정보"
+            return """
+            \(i + 1). [\(sev)] \(item.category.rawValue) — \(item.fileName)
+               문제: \(item.title)
+               상세: \(item.detail)
+               파일: \(item.filePath)
+            """
+        }.joined(separator: "\n\n")
+
+        return """
+        아래는 Swift 프로젝트 코드 분석 결과로 도출된 개선 할 일 목록입니다 (\(items.count)개).
+        각 항목을 순서대로 수정해줘. 수정 시 실제 코드 변경 사항도 함께 제시해줘.
+
+        \(taskList)
+        """
     }
 }
 
@@ -281,7 +333,7 @@ fileprivate struct ActionCopyPromptButton: View {
                 copied ? "복사됨!" : "AI 수정 프롬프트 복사",
                 systemImage: copied ? "checkmark.circle.fill" : "doc.on.clipboard"
             )
-            .font(.caption).fontWeight(.semibold)
+            .font(.body).fontWeight(.semibold)
             .foregroundColor(copied ? .green : .accentColor)
         }
         .buttonStyle(.bordered).controlSize(.small)

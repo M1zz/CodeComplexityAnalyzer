@@ -35,7 +35,7 @@ struct OrphanedFilesView: View {
     }
 
     private var infoBanner: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundColor(.orange)
@@ -44,16 +44,20 @@ struct OrphanedFilesView: View {
                     .fontWeight(.medium)
                 Spacer()
                 Text("\(files.count)개 파일")
-                    .font(.caption)
+                    .font(.body)
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(Color.orange.opacity(0.15))
                     .cornerRadius(4)
             }
-            Text("진입점 파일(~App.swift, AppDelegate.swift, main.swift)은 자동으로 제외됩니다.")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            HStack {
+                Text("진입점 파일(~App.swift, AppDelegate.swift, main.swift)은 자동으로 제외됩니다.")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                Spacer()
+                BulkDeletePromptButton(files: files)
+            }
         }
         .padding()
         .background(Color.orange.opacity(0.08))
@@ -85,7 +89,7 @@ struct OrphanedFileRow: View {
                     .fontWeight(.bold)
                     .lineLimit(1)
                 Text(file.filePath)
-                    .font(.caption)
+                    .font(.body)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -105,7 +109,7 @@ struct OrphanedFileRow: View {
                 )
             } label: {
                 Label("Finder에서 보기", systemImage: "folder")
-                    .font(.caption)
+                    .font(.body)
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
@@ -122,10 +126,54 @@ struct OrphanedFileRow: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.secondary)
             Text(label)
-                .font(.caption2)
+                .font(.body)
                 .foregroundColor(.secondary)
         }
         .frame(width: 48)
+    }
+}
+
+// MARK: - BulkDeletePromptButton
+
+fileprivate struct BulkDeletePromptButton: View {
+    let files: [FileAnalysis]
+    @State private var copied = false
+
+    var body: some View {
+        Button {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(makePrompt(), forType: .string)
+            withAnimation { copied = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation { copied = false }
+            }
+        } label: {
+            Label(
+                copied ? "복사됨!" : "전체 삭제 프롬프트 복사",
+                systemImage: copied ? "checkmark.circle.fill" : "trash.slash"
+            )
+            .font(.body).fontWeight(.semibold)
+            .foregroundColor(copied ? .green : .red)
+        }
+        .buttonStyle(.bordered).controlSize(.small)
+    }
+
+    private func makePrompt() -> String {
+        let fileList = files
+            .sorted { $0.lineCount > $1.lineCount }
+            .enumerated()
+            .map { i, f in "\(i + 1). \(f.filePath) (\(f.lineCount)줄, \(f.functionCount)개 함수)" }
+            .joined(separator: "\n")
+
+        return """
+        아래 Swift 파일들은 프로젝트 내 어떤 파일도 참조하지 않는 고아(orphaned) 파일입니다.
+        각 파일을 검토하고, 안전하게 삭제 가능한지 판단해줘.
+        삭제하면 안 되는 파일이 있다면 이유와 함께 알려줘.
+        삭제 가능한 파일은 실제로 삭제하는 명령어(rm)도 함께 제시해줘.
+
+        고아 파일 목록 (\(files.count)개):
+        \(fileList)
+        """
     }
 }
 
@@ -148,7 +196,7 @@ fileprivate struct OrphanCopyPromptButton: View {
                 copied ? "복사됨!" : "AI 프롬프트 복사",
                 systemImage: copied ? "checkmark.circle.fill" : "doc.on.clipboard"
             )
-            .font(.caption).fontWeight(.semibold)
+            .font(.body).fontWeight(.semibold)
             .foregroundColor(copied ? .green : .accentColor)
         }
         .buttonStyle(.bordered).controlSize(.small)

@@ -16,6 +16,7 @@ enum ViewMode: String, CaseIterable {
     case functions    = "함수"
     case gitHistory   = "변경이력"
     case orphan       = "고아 파일"
+    case aiReport     = "AI 진단"
 
     var icon: String {
         switch self {
@@ -31,6 +32,7 @@ enum ViewMode: String, CaseIterable {
         case .functions:    return "function"
         case .gitHistory:   return "clock.arrow.circlepath"
         case .orphan:       return "xmark.doc"
+        case .aiReport:     return "brain"
         }
     }
 }
@@ -149,6 +151,14 @@ struct ContentView: View {
                     }
                 case .orphan:
                     OrphanedFilesView(files: viewModel.orphanedFiles)
+                case .aiReport:
+                    AIReportView(
+                        analyses:     viewModel.analyses,
+                        summary:      viewModel.summary,
+                        healthScore:  viewModel.healthScore,
+                        actionItems:  viewModel.actionItems,
+                        selectedPath: viewModel.selectedPath
+                    )
                 }
             }
         }
@@ -167,9 +177,9 @@ struct ContentView: View {
                         viewMode = mode
                     } label: {
                         HStack(spacing: 4) {
-                            Image(systemName: mode.icon).font(.caption)
+                            Image(systemName: mode.icon).font(.body)
                             Text(mode.rawValue)
-                                .font(.caption)
+                                .font(.body)
                                 .fontWeight(viewMode == mode ? .semibold : .regular)
                         }
                         .padding(.horizontal, 10)
@@ -215,6 +225,16 @@ struct ContentView: View {
                 .buttonStyle(.bordered)
                 .menuStyle(.borderlessButton)
                 .fixedSize()
+            }
+
+            // 다시 분석하기 (폴더 선택 후에만 표시)
+            if let path = viewModel.selectedPath, !viewModel.isAnalyzing {
+                Button {
+                    Task { await viewModel.analyzeProject(at: URL(fileURLWithPath: path)) }
+                } label: {
+                    Label("다시 분석", systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
             }
 
             Button(action: { viewModel.selectFolder() }) {
@@ -271,10 +291,10 @@ struct ContentView: View {
             if let mostComplex = summary.mostComplexFile {
                 VStack(alignment: .leading, spacing: 4) {
                     Label("가장 복잡한 파일", systemImage: "exclamationmark.triangle")
-                        .font(.caption)
+                        .font(.body)
                         .foregroundColor(.secondary)
                     Text(mostComplex.fileName)
-                        .font(.caption)
+                        .font(.body)
                         .fontWeight(.medium)
                         .lineLimit(1)
                 }
@@ -297,13 +317,13 @@ struct ContentView: View {
                         .fontWeight(.semibold)
                     if let trend = viewModel.healthTrend {
                         Text(String(format: "%+.0f", trend))
-                            .font(.caption2)
+                            .font(.body)
                             .fontWeight(.semibold)
                             .foregroundColor(trend >= 0 ? .green : .red)
                     }
                 }
                 Text("건강 점수")
-                    .font(.caption2)
+                    .font(.body)
                     .foregroundColor(.secondary)
             }
             MetricInfoButton(key: "healthScore")
@@ -323,7 +343,7 @@ struct ContentView: View {
     private func summaryCard(title: String, value: String, icon: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Label(title, systemImage: icon)
-                .font(.caption)
+                .font(.body)
                 .foregroundColor(.secondary)
             Text(value)
                 .font(.title3)
@@ -368,7 +388,7 @@ struct ContentView: View {
             // 결과 개수
             Text("\(filteredAndSortedAnalyses.count)개 파일")
                 .foregroundColor(.secondary)
-                .font(.caption)
+                .font(.body)
         }
         .padding()
     }
@@ -447,7 +467,7 @@ struct FileRow: View {
                             .fontWeight(.medium)
                         
                         Text(analysis.filePath)
-                            .font(.caption)
+                            .font(.body)
                             .foregroundColor(.secondary)
                             .lineLimit(1)
                     }
@@ -465,7 +485,7 @@ struct FileRow: View {
                             .fontWeight(.bold)
                             .foregroundColor(complexityColor)
                         Text(analysis.complexityLevel.rawValue)
-                            .font(.caption2)
+                            .font(.body)
                             .foregroundColor(.secondary)
                     }
                     .frame(width: 80, alignment: .trailing)
@@ -473,7 +493,7 @@ struct FileRow: View {
                     // 확장 아이콘
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .foregroundColor(.secondary)
-                        .font(.caption)
+                        .font(.body)
                 }
                 .padding()
                 .background(Color(.controlBackgroundColor))
@@ -498,7 +518,7 @@ struct FileRow: View {
                 // 타입 정보
                 VStack(alignment: .leading, spacing: 8) {
                     Text("타입 구성")
-                        .font(.caption)
+                        .font(.body)
                         .foregroundColor(.secondary)
                         .fontWeight(.semibold)
                     
@@ -511,7 +531,7 @@ struct FileRow: View {
                 // 코드 정보
                 VStack(alignment: .leading, spacing: 8) {
                     Text("코드 구성")
-                        .font(.caption)
+                        .font(.body)
                         .foregroundColor(.secondary)
                         .fontWeight(.semibold)
                     
@@ -525,7 +545,7 @@ struct FileRow: View {
                 // 복잡도 게이지
                 VStack(spacing: 8) {
                     Text("복잡도 분석")
-                        .font(.caption)
+                        .font(.body)
                         .foregroundColor(.secondary)
                         .fontWeight(.semibold)
                     
@@ -545,7 +565,7 @@ struct FileRow: View {
                                 .font(.title2)
                                 .fontWeight(.bold)
                             Text("점수")
-                                .font(.caption2)
+                                .font(.body)
                                 .foregroundColor(.secondary)
                         }
                     }
@@ -563,7 +583,7 @@ struct FileRow: View {
                 .fontWeight(.semibold)
                 .foregroundColor(color)
             Text(label)
-                .font(.caption2)
+                .font(.body)
                 .foregroundColor(.secondary)
         }
         .frame(width: 50)
@@ -572,11 +592,11 @@ struct FileRow: View {
     private func detailMetric(label: String, value: Int) -> some View {
         HStack {
             Text(label)
-                .font(.caption)
+                .font(.body)
                 .foregroundColor(.secondary)
                 .frame(width: 80, alignment: .leading)
             Text("\(value)")
-                .font(.caption)
+                .font(.body)
                 .fontWeight(.medium)
                 .monospacedDigit()
         }

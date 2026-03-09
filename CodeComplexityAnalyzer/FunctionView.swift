@@ -90,7 +90,7 @@ struct FunctionView: View {
                     }
                 } label: {
                     Label(selectedLevel?.rawValue ?? "복잡도 전체",
-                          systemImage: "speedometer").font(.caption)
+                          systemImage: "speedometer").font(.body)
                 }.menuStyle(.borderlessButton).fixedSize()
 
                 Spacer()
@@ -99,7 +99,7 @@ struct FunctionView: View {
                     ForEach(SortBy.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }.pickerStyle(.segmented).frame(width: 280)
 
-                Text("\(filtered.count)개").font(.caption).foregroundColor(.secondary)
+                Text("\(filtered.count)개").font(.body).foregroundColor(.secondary)
             }
         }
         .padding(10).background(Color(.windowBackgroundColor))
@@ -135,7 +135,7 @@ struct FunctionView: View {
     private func statCard(_ title: String, _ value: String, _ color: Color) -> some View {
         VStack(spacing: 4) {
             Text(value).font(.title3).fontWeight(.bold).foregroundColor(color)
-            Text(title).font(.caption2).foregroundColor(.secondary)
+            Text(title).font(.body).foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity).padding(10)
         .background(color.opacity(0.1)).cornerRadius(8)
@@ -151,7 +151,7 @@ struct FunctionView: View {
 
     private var complexityDistChart: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("복잡도 분포").font(.caption).fontWeight(.semibold).foregroundColor(.secondary)
+            Text("복잡도 분포").font(.body).fontWeight(.semibold).foregroundColor(.secondary)
             let data = ComplexityLevel.allCases.compactMap { lv -> (label: String, count: Int)? in
                 let cnt = functions.filter { $0.ccLevel == lv }.count
                 return cnt > 0 ? (lv.rawValue, cnt) : nil
@@ -160,7 +160,7 @@ struct FunctionView: View {
                 BarMark(x: .value("수", item.count), y: .value("등급", item.label))
                     .foregroundStyle(Color.purple.gradient)
                     .annotation(position: .trailing) {
-                        Text("\(item.count)").font(.caption2).foregroundColor(.secondary)
+                        Text("\(item.count)").font(.body).foregroundColor(.secondary)
                     }
             }
             .chartXAxis(.hidden)
@@ -171,13 +171,13 @@ struct FunctionView: View {
 
     private var topLengthChart: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("가장 긴 함수 Top 5").font(.caption).fontWeight(.semibold).foregroundColor(.secondary)
+            Text("가장 긴 함수 Top 5").font(.body).fontWeight(.semibold).foregroundColor(.secondary)
             let top = Array(functions.sorted { $0.lineCount > $1.lineCount }.prefix(5))
             Chart(top) { fn in
                 BarMark(x: .value("줄", fn.lineCount), y: .value("함수", fn.name))
                     .foregroundStyle(Color.red.gradient)
                     .annotation(position: .trailing) {
-                        Text("\(fn.lineCount)").font(.caption2).foregroundColor(.secondary)
+                        Text("\(fn.lineCount)").font(.body).foregroundColor(.secondary)
                     }
             }
             .chartXAxis(.hidden)
@@ -205,7 +205,7 @@ struct FunctionRow: View {
                         Text(fn.name)
                             .font(.system(.body, design: .monospaced)).fontWeight(.medium)
                         Text("\(fn.fileName):\(fn.startLine)")
-                            .font(.caption2).foregroundColor(.secondary)
+                            .font(.body).foregroundColor(.secondary)
                     }
 
                     Spacer()
@@ -214,7 +214,7 @@ struct FunctionRow: View {
                     badge("CC \(fn.cc)", fn.ccLevel.rawValue, ccColor)
 
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption2).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                 }
                 .padding()
                 .background(Color(.controlBackgroundColor))
@@ -232,7 +232,7 @@ struct FunctionRow: View {
                         .background(Color(.textBackgroundColor))
                         .cornerRadius(6)
                     Text(fn.filePath)
-                        .font(.caption2).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                         .lineLimit(1).truncationMode(.middle)
                 }
                 .padding(.horizontal, 12).padding(.bottom, 10)
@@ -246,7 +246,7 @@ struct FunctionRow: View {
     private func badge(_ value: String, _ label: String, _ color: Color) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.callout).fontWeight(.semibold).foregroundColor(color)
-            Text(label).font(.caption2).foregroundColor(.secondary)
+            Text(label).font(.body).foregroundColor(.secondary)
         }.frame(width: 56)
     }
 

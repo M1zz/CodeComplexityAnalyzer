@@ -69,7 +69,7 @@ struct CompareView: View {
                     .foregroundStyle(Color.accentColor)
                     .annotation(position: .top) {
                         Text(String(format: "%.0f", snap.healthScore))
-                            .font(.caption2)
+                            .font(.body)
                             .foregroundColor(.secondary)
                     }
                 }
@@ -80,7 +80,7 @@ struct CompareView: View {
                         AxisValueLabel {
                             if let date = value.as(Date.self) {
                                 Text(shortDate(date))
-                                    .font(.caption2)
+                                    .font(.body)
                             }
                         }
                     }
@@ -124,7 +124,7 @@ struct CompareView: View {
                         .font(.callout)
                         .fontWeight(.semibold)
                     Text(fullDate(snapshot.date))
-                        .font(.caption)
+                        .font(.body)
                         .foregroundColor(.secondary)
                 }
 
@@ -136,7 +136,7 @@ struct CompareView: View {
                         Image(systemName: diff >= 0 ? "arrow.up" : "arrow.down")
                         Text(String(format: "%+.0f", diff))
                     }
-                    .font(.caption)
+                    .font(.body)
                     .fontWeight(.semibold)
                     .foregroundColor(diff >= 0 ? .green : .red)
                 }
@@ -170,20 +170,20 @@ struct CompareView: View {
         let isUp = diff >= 0
         return VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.caption2)
+                .font(.body)
                 .foregroundColor(.secondary)
             HStack(spacing: 2) {
                 Text(String(format: "%.0f", previous))
-                    .font(.caption2)
+                    .font(.body)
                     .foregroundColor(.secondary)
                 Image(systemName: "arrow.right")
-                    .font(.caption2)
+                    .font(.body)
                     .foregroundColor(.secondary)
                 Text(String(format: "%.0f", current))
-                    .font(.caption2)
+                    .font(.body)
                     .fontWeight(.semibold)
                 Image(systemName: isUp ? "arrow.up" : "arrow.down")
-                    .font(.caption2)
+                    .font(.body)
                     .foregroundColor(isUp ? .green : .red)
             }
         }
@@ -192,10 +192,10 @@ struct CompareView: View {
     private func metricItem(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.caption2)
+                .font(.body)
                 .foregroundColor(.secondary)
             Text(value)
-                .font(.caption)
+                .font(.body)
                 .fontWeight(.medium)
         }
     }

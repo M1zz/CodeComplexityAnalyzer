@@ -30,11 +30,11 @@ struct CodeQualityView: View {
     private var scoreBanner: some View {
         HStack(spacing: 24) {
             VStack(spacing: 2) {
-                Text("종합 품질 점수").font(.caption2).foregroundColor(.secondary)
+                Text("종합 품질 점수").font(.body).foregroundColor(.secondary)
                 Text(String(format: "%.0f", report.overallScore))
                     .font(.system(size: 34, weight: .bold, design: .rounded))
                     .foregroundColor(scoreColor(report.overallScore))
-                Text("/ 100").font(.caption2).foregroundColor(.secondary)
+                Text("/ 100").font(.body).foregroundColor(.secondary)
             }
 
             Divider().frame(height: 50)
@@ -52,7 +52,7 @@ struct CodeQualityView: View {
 
     private func metric(_ title: String, _ value: String, _ color: Color) -> some View {
         VStack(spacing: 2) {
-            Text(title).font(.caption2).foregroundColor(.secondary)
+            Text(title).font(.body).foregroundColor(.secondary)
             Text(value).font(.title3).fontWeight(.bold).foregroundColor(color)
         }
     }
@@ -84,9 +84,9 @@ struct CodeQualityView: View {
             }
             .padding(8).background(Color(.textBackgroundColor)).cornerRadius(8).frame(width: 200)
 
-            Toggle("이슈만", isOn: $showOnlyIssues).toggleStyle(.checkbox).font(.caption)
+            Toggle("이슈만", isOn: $showOnlyIssues).toggleStyle(.checkbox).font(.body)
             Spacer()
-            Text("\(filtered.count)개").font(.caption).foregroundColor(.secondary)
+            Text("\(filtered.count)개").font(.body).foregroundColor(.secondary)
         }
         .padding(10).background(Color(.windowBackgroundColor))
     }
@@ -111,13 +111,13 @@ struct CodeQualityView: View {
 
     private var scoreDistChart: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("점수 분포").font(.caption).fontWeight(.semibold).foregroundColor(.secondary)
+            Text("점수 분포").font(.body).fontWeight(.semibold).foregroundColor(.secondary)
             let buckets = scoreBuckets
             Chart(buckets, id: \.range) { b in
                 BarMark(x: .value("수", b.count), y: .value("범위", b.range))
                     .foregroundStyle(Color.blue.gradient)
                     .annotation(position: .trailing) {
-                        Text("\(b.count)").font(.caption2).foregroundColor(.secondary)
+                        Text("\(b.count)").font(.body).foregroundColor(.secondary)
                     }
             }
             .chartXAxis(.hidden)
@@ -129,13 +129,13 @@ struct CodeQualityView: View {
     private var commentRatioChart: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("낮은 주석 비율 파일 Top 5")
-                .font(.caption).fontWeight(.semibold).foregroundColor(.secondary)
+                .font(.body).fontWeight(.semibold).foregroundColor(.secondary)
             let top = report.files
                 .filter { $0.file.lineCount > 50 }
                 .sorted { $0.commentRatio < $1.commentRatio }
                 .prefix(5)
             if top.isEmpty {
-                Text("해당 파일 없음").font(.caption).foregroundColor(.secondary).padding()
+                Text("해당 파일 없음").font(.body).foregroundColor(.secondary).padding()
             } else {
                 Chart(top) { fq in
                     BarMark(
@@ -145,7 +145,7 @@ struct CodeQualityView: View {
                     .foregroundStyle(Color.orange.gradient)
                     .annotation(position: .trailing) {
                         Text(String(format: "%.1f%%", fq.commentRatio * 100))
-                            .font(.caption2).foregroundColor(.secondary)
+                            .font(.body).foregroundColor(.secondary)
                     }
                 }
                 .chartXAxis(.hidden)
@@ -187,7 +187,7 @@ struct FileQualityRow: View {
                         Text(fq.file.fileName)
                             .font(.system(.body, design: .monospaced)).fontWeight(.medium)
                         if let first = fq.issues.first {
-                            Text(first).font(.caption2).foregroundColor(.orange).lineLimit(1)
+                            Text(first).font(.body).foregroundColor(.orange).lineLimit(1)
                         }
                     }
 
@@ -197,7 +197,7 @@ struct FileQualityRow: View {
                     vBadge(String(format: "%.0f", fq.avgFunctionLength), "avg줄", .green)
 
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption2).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                 }
                 .padding()
                 .background(Color(.controlBackgroundColor))
@@ -210,7 +210,7 @@ struct FileQualityRow: View {
                     Divider()
                     ForEach(fq.issues, id: \.self) { issue in
                         Label(issue, systemImage: "exclamationmark.circle")
-                            .font(.caption).foregroundColor(.orange)
+                            .font(.body).foregroundColor(.orange)
                     }
                     QualityCopyPromptButton(fq: fq)
                         .padding(.top, 4)
@@ -226,7 +226,7 @@ struct FileQualityRow: View {
     private func vBadge(_ value: String, _ label: String, _ color: Color) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.callout).fontWeight(.semibold).foregroundColor(color)
-            Text(label).font(.caption2).foregroundColor(.secondary)
+            Text(label).font(.body).foregroundColor(.secondary)
         }.frame(width: 46)
     }
 
@@ -254,7 +254,7 @@ fileprivate struct QualityCopyPromptButton: View {
                 copied ? "복사됨!" : "AI 수정 프롬프트 복사",
                 systemImage: copied ? "checkmark.circle.fill" : "doc.on.clipboard"
             )
-            .font(.caption).fontWeight(.semibold)
+            .font(.body).fontWeight(.semibold)
             .foregroundColor(copied ? .green : .accentColor)
         }
         .buttonStyle(.bordered).controlSize(.small)

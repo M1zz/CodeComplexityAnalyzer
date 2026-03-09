@@ -60,7 +60,7 @@ struct GraphView: View {
             Divider()
             statsBar
         }
-        .onChange(of: selectedFilePath) { newVal in
+        .onChange(of: selectedFilePath) { _, newVal in
             updateTransitiveSets(for: newVal)
         }
     }
@@ -357,7 +357,7 @@ struct GraphView: View {
             }
             if isLayoutReady {
                 Text("핀치: 줌  ·  배경 드래그: 이동  ·  노드 드래그: 위치 변경  ·  노드 클릭: 선택")
-                    .font(.caption2)
+                    .font(.body)
                     .foregroundColor(.white.opacity(0.35))
             }
         }
@@ -368,16 +368,16 @@ struct GraphView: View {
         HStack(spacing: 6) {
             // 줌 인/아웃 버튼
             Button { withAnimation { zoom = (zoom / 1.3).clamped(0.25, 4.0); baseZoom = zoom } }
-            label: { Image(systemName: "minus.magnifyingglass").font(.caption) }
+            label: { Image(systemName: "minus.magnifyingglass").font(.body) }
             .buttonStyle(.bordered).controlSize(.mini).colorScheme(.dark)
 
             Text(String(format: "%.0f%%", zoom * 100))
-                .font(.caption2).monospacedDigit()
+                .font(.body).monospacedDigit()
                 .foregroundColor(.white.opacity(0.75))
                 .frame(width: 36)
 
             Button { withAnimation { zoom = (zoom * 1.3).clamped(0.25, 4.0); baseZoom = zoom } }
-            label: { Image(systemName: "plus.magnifyingglass").font(.caption) }
+            label: { Image(systemName: "plus.magnifyingglass").font(.body) }
             .buttonStyle(.bordered).controlSize(.mini).colorScheme(.dark)
 
             // 줌/패닝 초기화
@@ -386,7 +386,7 @@ struct GraphView: View {
                     zoom = 1; baseZoom = 1; panOffset = .zero; basePan = .zero
                 }
             } label: {
-                Image(systemName: "arrow.up.left.and.arrow.down.right").font(.caption)
+                Image(systemName: "arrow.up.left.and.arrow.down.right").font(.body)
             }
             .buttonStyle(.bordered).controlSize(.mini).colorScheme(.dark)
             .help("줌/이동 초기화")
@@ -396,7 +396,7 @@ struct GraphView: View {
                 isLayoutReady = false; positions = [:]
                 computeAll(size: layoutSize)
             } label: {
-                Label("재계산", systemImage: "arrow.clockwise").font(.caption)
+                Label("재계산", systemImage: "arrow.clockwise").font(.body)
             }
             .buttonStyle(.bordered).controlSize(.small).colorScheme(.dark)
         }
@@ -426,7 +426,7 @@ struct GraphView: View {
     private func legendDot(_ color: Color, _ label: String) -> some View {
         HStack(spacing: 4) {
             Circle().fill(color).frame(width: 8, height: 8)
-            Text(label).font(.caption2).foregroundColor(.white.opacity(0.8))
+            Text(label).font(.body).foregroundColor(.white.opacity(0.8))
         }
     }
     private func ringLegend(_ color: Color, _ label: String, dashed: Bool = false) -> some View {
@@ -436,7 +436,7 @@ struct GraphView: View {
                     ? StrokeStyle(lineWidth: 1.5, dash: [3, 2])
                     : StrokeStyle(lineWidth: 1.5))
                 .frame(width: 10, height: 10)
-            Text(label).font(.caption2).foregroundColor(.white.opacity(0.8))
+            Text(label).font(.body).foregroundColor(.white.opacity(0.8))
         }
     }
 
@@ -459,7 +459,7 @@ struct GraphView: View {
                              value: "\(name) (\(top.count)회)", color: .yellow)
                 }
             } else {
-                Text("분석 중…").font(.caption).foregroundColor(.secondary)
+                Text("분석 중…").font(.body).foregroundColor(.secondary)
             }
             Spacer()
         }
@@ -469,10 +469,10 @@ struct GraphView: View {
 
     private func statChip(icon: String, label: String, value: String, color: Color) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: icon).foregroundColor(color).font(.caption)
+            Image(systemName: icon).foregroundColor(color).font(.body)
             VStack(alignment: .leading, spacing: 1) {
-                Text(label).font(.caption2).foregroundColor(.secondary)
-                Text(value).font(.caption).fontWeight(.medium)
+                Text(label).font(.body).foregroundColor(.secondary)
+                Text(value).font(.body).fontWeight(.medium)
             }
         }
     }
@@ -492,12 +492,12 @@ struct GraphView: View {
                     Text(analysis.fileName)
                         .font(.system(.headline, design: .monospaced)).lineLimit(2)
                     Text(analysis.filePath)
-                        .font(.caption2).foregroundColor(.secondary).lineLimit(4)
+                        .font(.body).foregroundColor(.secondary).lineLimit(4)
                 }
 
                 if isCyclic {
                     Label("순환 의존성 포함", systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption).foregroundColor(.red)
+                        .font(.body).foregroundColor(.red)
                         .padding(6)
                         .background(Color.red.opacity(0.1))
                         .cornerRadius(6)
@@ -508,7 +508,7 @@ struct GraphView: View {
                 HStack {
                     Circle().fill(complexityColor(analysis.complexityLevel))
                         .frame(width: 10, height: 10)
-                    Text(analysis.complexityLevel.rawValue).font(.caption)
+                    Text(analysis.complexityLevel.rawValue).font(.body)
                     Spacer()
                     Text(String(format: "%.1f", analysis.complexityScore)).fontWeight(.bold)
                 }
@@ -532,21 +532,21 @@ struct GraphView: View {
 
                 if !depList.uses.isEmpty {
                     Text("이 파일이 참조 (\(depList.uses.count))")
-                        .font(.caption).foregroundColor(.secondary).fontWeight(.semibold)
+                        .font(.body).foregroundColor(.secondary).fontWeight(.semibold)
                     ForEach(depList.uses, id: \.fileName) { dep in
                         DepRowView(fileName: dep.fileName, types: dep.sharedTypes, direction: .outgoing)
                     }
                 }
                 if !depList.usedBy.isEmpty {
                     Text("이 파일을 참조 (\(depList.usedBy.count))")
-                        .font(.caption).foregroundColor(.secondary).fontWeight(.semibold)
+                        .font(.body).foregroundColor(.secondary).fontWeight(.semibold)
                     ForEach(depList.usedBy, id: \.fileName) { dep in
                         DepRowView(fileName: dep.fileName, types: dep.sharedTypes, direction: .incoming)
                     }
                 }
                 if depList.uses.isEmpty && depList.usedBy.isEmpty {
                     Label("연결된 파일 없음", systemImage: "circle.slash")
-                        .font(.caption).foregroundColor(.secondary)
+                        .font(.body).foregroundColor(.secondary)
                 }
                 Spacer(minLength: 0)
             }
@@ -557,9 +557,9 @@ struct GraphView: View {
 
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack {
-            Text(label).font(.caption).foregroundColor(.secondary)
+            Text(label).font(.body).foregroundColor(.secondary)
             Spacer()
-            Text(value).font(.caption).fontWeight(.medium).monospacedDigit()
+            Text(value).font(.body).fontWeight(.medium).monospacedDigit()
         }
     }
 
@@ -803,18 +803,18 @@ private struct DepRowView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: direction == .outgoing ? "arrow.right" : "arrow.left")
-                        .font(.caption2)
+                        .font(.body)
                         .foregroundColor(direction == .outgoing ? .blue : .orange)
                     Text(fileName)
-                        .font(.caption)
+                        .font(.body)
                         .foregroundColor(direction == .outgoing ? .blue : .orange)
                         .lineLimit(1)
                     Spacer()
                     if !types.isEmpty {
                         Text("\(types.count)개 타입")
-                            .font(.caption2).foregroundColor(.secondary)
+                            .font(.body).foregroundColor(.secondary)
                         Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                            .font(.caption2).foregroundColor(.secondary)
+                            .font(.body).foregroundColor(.secondary)
                     }
                 }
             }

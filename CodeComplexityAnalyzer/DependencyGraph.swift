@@ -43,9 +43,43 @@ struct DependencyStats {
             .map { $0.filePath }
 
         let entryPointSuffixes = ["App.swift", "AppDelegate.swift", "main.swift", "SceneDelegate.swift"]
+        // 프로젝트 내 모든 파일명(확장자 제거) — extension 대상 타입명 비교에 사용
+        let projectTypeNames = Set(analyses.map {
+            URL(fileURLWithPath: $0.filePath).deletingPathExtension().lastPathComponent
+        })
+
+        // 다른 파일들의 내용을 미리 로드 (static 멤버 사용 여부 검사용)
+        let otherContents: [(path: String, content: String)] = analyses.compactMap { a in
+            guard let c = try? String(contentsOf: URL(fileURLWithPath: a.filePath), encoding: .utf8) else { return nil }
+            return (a.filePath, c)
+        }
+
         let orphaned = analyses.filter { file in
-            inDeg[file.filePath] == nil &&
-            !entryPointSuffixes.contains(where: { file.fileName.hasSuffix($0) })
+            // 진입점 제외
+            guard !entryPointSuffixes.contains(where: { file.fileName.hasSuffix($0) }) else { return false }
+            // 다른 파일이 이 파일의 타입을 참조하면 고아 아님
+            guard inDeg[file.filePath] == nil else { return false }
+            // 이 파일이 다른 파일의 타입을 참조하면 (outDeg > 0) 고아 아님
+            if (outDeg[file.filePath] ?? 0) > 0 { return false }
+
+            guard let content = (otherContents.first { $0.path == file.filePath }?.content) else { return true }
+
+            // extension으로 프로젝트 파일명과 일치하는 타입을 확장하면 고아 아님
+            let extendedNames = DependencyAnalyzer.extractExtensionTypeNames(from: content)
+            if extendedNames.contains(where: { projectTypeNames.contains($0) }) { return false }
+
+            // static 멤버(let/var/func)나 최상위 함수 이름이 다른 파일에서 사용되면 고아 아님
+            // — extension Notification.Name { static let xxx } 같은 패턴 대응
+            let exportedNames = DependencyAnalyzer.extractExportedMemberNames(from: content)
+            if !exportedNames.isEmpty {
+                for other in otherContents where other.path != file.filePath {
+                    if exportedNames.contains(where: { DependencyAnalyzer.containsWord($0, in: other.content) }) {
+                        return false
+                    }
+                }
+            }
+
+            return true
         }.map(\.filePath)
 
         return DependencyStats(
@@ -198,7 +232,32 @@ class DependencyAnalyzer {
     // MARK: - Private
 
     static func extractTypeNames(from content: String) -> [String] {
-        let pattern = #"(?:class|struct|enum|protocol)\s+(\w+)"#
+        let pattern = #"(?:class|struct|enum|protocol|actor|typealias)\s+(\w+)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let range = NSRange(content.startIndex..., in: content)
+        return regex.matches(in: content, range: range).compactMap { match in
+            guard let r = Range(match.range(at: 1), in: content) else { return nil }
+            return String(content[r])
+        }
+    }
+
+    /// static let/var/func 및 최상위 func 이름 추출 (길이 3 이상)
+    /// extension Notification.Name { static let xxx } 같은 패턴의 사용 추적에 사용
+    static func extractExportedMemberNames(from content: String) -> [String] {
+        let pattern = #"(?:static\s+)?(?:let|var|func)\s+(`?)(\w+)\1"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let range = NSRange(content.startIndex..., in: content)
+        return regex.matches(in: content, range: range).compactMap { match in
+            guard let r = Range(match.range(at: 2), in: content) else { return nil }
+            let name = String(content[r])
+            // 너무 짧거나 Swift 키워드처럼 흔한 이름은 제외
+            return name.count >= 4 ? name : nil
+        }
+    }
+
+    /// `extension TypeName` 패턴에서 확장 대상 타입명 추출
+    static func extractExtensionTypeNames(from content: String) -> [String] {
+        let pattern = #"extension\s+(\w+)"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
         let range = NSRange(content.startIndex..., in: content)
         return regex.matches(in: content, range: range).compactMap { match in

@@ -80,7 +80,7 @@ struct HomeView: View {
                         .fontWeight(.bold)
                     if let dateStr = lastAnalysisDate {
                         Text("마지막 분석: \(dateStr)")
-                            .font(.caption)
+                            .font(.body)
                             .foregroundColor(.secondary)
                     }
                 }
@@ -137,7 +137,7 @@ struct HomeView: View {
                         }
                     }
                     Text(health.statusLabel)
-                        .font(.caption)
+                        .font(.body)
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
@@ -166,7 +166,7 @@ struct HomeView: View {
     private func componentBar(label: String, value: Double, color: Color) -> some View {
         HStack(spacing: 8) {
             Text(label)
-                .font(.caption)
+                .font(.body)
                 .foregroundColor(.secondary)
                 .frame(width: 40, alignment: .leading)
             GeometryReader { geo in
@@ -180,7 +180,7 @@ struct HomeView: View {
             }
             .frame(height: 6)
             Text(String(format: "%.0f", value))
-                .font(.caption2)
+                .font(.body)
                 .foregroundColor(.secondary)
                 .frame(width: 28, alignment: .trailing)
         }
@@ -192,7 +192,7 @@ struct HomeView: View {
             Image(systemName: isUp ? "arrow.up" : "arrow.down")
             Text(String(format: "%+.0f", trend))
         }
-        .font(.caption2)
+        .font(.body)
         .fontWeight(.semibold)
         .foregroundColor(isUp ? .green : .red)
         .padding(.horizontal, 6)
@@ -229,14 +229,14 @@ struct HomeView: View {
                     .font(.callout)
                     .fontWeight(.semibold)
                 Text(subtitle)
-                    .font(.caption)
+                    .font(.body)
                     .foregroundColor(.secondary)
                     .lineLimit(2)
                 Spacer()
                 HStack {
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.caption)
+                        .font(.body)
                         .foregroundColor(.secondary)
                 }
             }

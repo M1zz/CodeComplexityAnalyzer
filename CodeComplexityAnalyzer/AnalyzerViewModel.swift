@@ -57,8 +57,21 @@ class AnalyzerViewModel: ObservableObject {
     @Published var orphanedFiles: [FileAnalysis] = []
 
     private let analyzer = CodeAnalyzer()
+    private let lastPathKey = "cca_last_project_path"
 
-    init() { loadSnapshots() }
+    init() {
+        loadSnapshots()
+        restoreLastProject()
+    }
+
+    // MARK: - 마지막 프로젝트 복원
+
+    private func restoreLastProject() {
+        guard let path = UserDefaults.standard.string(forKey: lastPathKey),
+              FileManager.default.fileExists(atPath: path) else { return }
+        selectedPath = path
+        Task { await analyzeProject(at: URL(fileURLWithPath: path)) }
+    }
 
     // MARK: - 폴더 선택
 
@@ -72,6 +85,7 @@ class AnalyzerViewModel: ObservableObject {
 
         panel.begin { [weak self] response in
             guard response == .OK, let url = panel.url else { return }
+            UserDefaults.standard.set(url.path, forKey: "cca_last_project_path")
             Task { @MainActor in
                 self?.selectedPath = url.path
                 await self?.analyzeProject(at: url)

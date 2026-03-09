@@ -79,10 +79,10 @@ struct ChartsView: View {
                                 .fill(colorByName(item.name))
                                 .frame(width: 12, height: 12)
                             Text(item.name)
-                                .font(.caption)
+                                .font(.body)
                             Spacer()
                             Text("\(item.count)개")
-                                .font(.caption)
+                                .font(.body)
                                 .foregroundColor(.secondary)
                         }
                     }
@@ -125,7 +125,7 @@ struct ChartsView: View {
                     .font(.headline)
 
                 Text("크기 = 복잡도 점수  |  색상 = 복잡도 레벨")
-                    .font(.caption)
+                    .font(.body)
                     .foregroundColor(.secondary)
 
                 TreemapView(analyses: analyses)
