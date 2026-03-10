@@ -3,6 +3,8 @@ import Charts
 
 struct ActionsView: View {
     let items: [ActionItem]
+    let selectedPath: String?
+    let healthScore: HealthScore?
     @State private var selectedCategory: ActionCategory? = nil
 
     private var filteredItems: [ActionItem] {
@@ -79,8 +81,11 @@ struct ActionsView: View {
 
             Divider().frame(height: 20)
 
-            BulkActionPromptButton(items: filteredItems)
-                .padding(.horizontal, 10)
+            HStack(spacing: 6) {
+                ChecklistSaveButton(items: items, selectedPath: selectedPath, healthScore: healthScore)
+                BulkActionPromptButton(items: filteredItems)
+            }
+            .padding(.horizontal, 10)
         }
         .background(Color(.windowBackgroundColor))
     }
@@ -370,5 +375,96 @@ fileprivate struct ActionCopyPromptButton: View {
         상세 설명:
         \(item.detail)
         """
+    }
+}
+
+// MARK: - ChecklistSaveButton
+
+fileprivate struct ChecklistSaveButton: View {
+    let items: [ActionItem]
+    let selectedPath: String?
+    let healthScore: HealthScore?
+    @State private var saved = false
+
+    var body: some View {
+        Button {
+            save()
+        } label: {
+            Label(
+                saved ? "저장됨!" : "체크리스트 저장",
+                systemImage: saved ? "checkmark.circle.fill" : "checklist"
+            )
+            .font(.body).fontWeight(.semibold)
+            .foregroundColor(saved ? .green : .accentColor)
+        }
+        .buttonStyle(.bordered).controlSize(.small)
+    }
+
+    private func save() {
+        let panel = NSSavePanel()
+        let projectName = selectedPath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "project"
+        panel.nameFieldStringValue = "\(projectName)_리팩토링체크리스트.md"
+        panel.allowedContentTypes = [.plainText]
+        panel.message = "체크리스트를 저장할 위치를 선택하세요"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let content = makeChecklist()
+        try? content.write(to: url, atomically: true, encoding: .utf8)
+        withAnimation { saved = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            withAnimation { saved = false }
+        }
+        // Finder에서 파일 선택 상태로 열기
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
+    private func makeChecklist() -> String {
+        let date = DateFormatter.localizedString(from: Date(), dateStyle: .long, timeStyle: .short)
+        let projectName = selectedPath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "프로젝트"
+        let totalPotential = items.map(\.impactScore).reduce(0, +)
+        let currentScore = healthScore.map { String(format: "%.0f점", $0.overall) } ?? "-"
+        let projected = healthScore.map { String(format: "%.0f점", min(100, $0.overall + totalPotential)) } ?? "-"
+
+        var md = """
+        # \(projectName) 리팩토링 체크리스트
+
+        > 생성: \(date)
+        > 경로: \(selectedPath ?? "-")
+        > 현재 건강점수: \(currentScore) → 모두 해결 시: \(projected) (예상 +\(String(format: "%.1f", totalPotential))점)
+        > 총 \(items.count)개 항목
+
+        ---
+
+        """
+
+        // 심각도별 그룹
+        let groups: [(label: String, emoji: String, items: [ActionItem])] = [
+            ("긴급", "🔴", items.filter { $0.severity == .critical }),
+            ("경고", "🟠", items.filter { $0.severity == .warning }),
+            ("정보", "🔵", items.filter { $0.severity == .info }),
+        ]
+
+        for group in groups where !group.items.isEmpty {
+            md += "## \(group.emoji) \(group.label) (\(group.items.count)개)\n\n"
+
+            // 파일별로 묶기
+            let byFile = Dictionary(grouping: group.items, by: \.fileName)
+            let sortedFiles = byFile.keys.sorted()
+
+            for fileName in sortedFiles {
+                let fileItems = byFile[fileName]!
+                md += "### \(fileName)\n"
+                md += "`\(fileItems[0].filePath)`\n\n"
+                for item in fileItems.sorted(by: { $0.impactScore > $1.impactScore }) {
+                    md += "- [ ] **[\(item.category.rawValue)]** \(item.title)"
+                    md += " _(+\(String(format: "%.1f", item.impactScore))점)_\n"
+                    md += "  > \(item.detail.components(separatedBy: "\n").first ?? "")\n\n"
+                }
+            }
+        }
+
+        md += "---\n\n"
+        md += "> 총 예상 개선: +\(String(format: "%.1f", totalPotential))점 "
+        md += "(\(currentScore) → \(projected))\n"
+        return md
     }
 }

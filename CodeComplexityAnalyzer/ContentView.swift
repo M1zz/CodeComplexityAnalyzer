@@ -109,7 +109,11 @@ struct ContentView: View {
                         onSelectFolder: { viewModel.selectFolder() }
                     )
                 case .actions:
-                    ActionsView(items: viewModel.actionItems)
+                    ActionsView(
+                        items:        viewModel.actionItems,
+                        selectedPath: viewModel.selectedPath,
+                        healthScore:  viewModel.healthScore
+                    )
                 case .compare:
                     CompareView(
                         snapshots:     viewModel.snapshots,
