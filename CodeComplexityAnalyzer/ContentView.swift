@@ -13,7 +13,6 @@ enum ViewMode: String, CaseIterable {
     case architecture = "아키텍처"
     case quality      = "품질"
     case functions    = "함수"
-    case gitHistory   = "변경이력"
     case orphan       = "고아 파일"
     case aiReport     = "AI 진단"
 
@@ -28,8 +27,7 @@ enum ViewMode: String, CaseIterable {
         case .architecture: return "building.columns"
         case .quality:      return "checkmark.seal"
         case .functions:    return "function"
-        case .gitHistory:   return "clock.arrow.circlepath"
-        case .orphan:       return "xmark.doc"
+case .orphan:       return "xmark.doc"
         case .aiReport:     return "brain"
         }
     }
@@ -137,13 +135,6 @@ struct ContentView: View {
                     }
                 case .functions:
                     FunctionView(functions: viewModel.functions)
-                case .gitHistory:
-                    if let report = viewModel.gitHistoryReport {
-                        GitHistoryView(report: report)
-                    } else {
-                        ProgressView("변경 이력 분석 중...")
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
                 case .orphan:
                     OrphanedFilesView(files: viewModel.orphanedFiles)
                 case .aiReport:

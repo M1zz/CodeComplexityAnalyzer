@@ -97,11 +97,11 @@ struct HomeView: View {
                     destination: .list
                 )
                 actionCard(
-                    icon: "clock.arrow.circlepath",
-                    title: "변경 이력",
-                    subtitle: "Git 커밋 히스토리",
+                    icon: "network",
+                    title: "관계도",
+                    subtitle: "파일 의존성 시각화",
                     color: .purple,
-                    destination: .gitHistory
+                    destination: .graph
                 )
             }
         }
