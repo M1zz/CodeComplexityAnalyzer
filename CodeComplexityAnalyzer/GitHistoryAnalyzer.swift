@@ -52,40 +52,56 @@ struct GitHistoryAnalyzer {
             return GitHistoryReport(isGitRepo: false, totalCommits: 0, fileChanges: [], topAuthors: [])
         }
 
-        let totalCommits = gitInt(["rev-list", "--count", "HEAD"], at: gitRoot)
+        // 단일 git log 호출로 커밋 수·날짜·작성자·변경파일 한 번에 수집
+        // 형식: "COMMIT\t<날짜ISO>\t<작성자>" 줄 다음에 변경된 파일 목록
+        let raw = run(
+            ["log", "--format=COMMIT\t%ci\t%an", "--name-only", "--max-count=2000"],
+            at: gitRoot,
+            timeout: 15
+        )
 
-        // Top authors (one git call)
-        let allAuthors = gitLines(["log", "--format=%an"], at: gitRoot)
-        let authorCounts = allAuthors.reduce(into: [String: Int]()) { $0[$1, default: 0] += 1 }
-        let topAuthors = authorCounts.sorted { $0.value > $1.value }.prefix(5).map(\.key)
+        var commitCountMap   = [String: Int]()
+        var lastModifiedMap  = [String: Date]()
+        var authorsMap       = [String: Set<String>]()
+        var authorFreq       = [String: Int]()
+        var totalCommits     = 0
 
-        // File change counts — single efficient call: git log --name-only --format=""
-        let rawLog = run(["log", "--name-only", "--format="], at: gitRoot)
-        var commitCountMap = [String: Int]()
-        for line in rawLog.components(separatedBy: "\n") where !line.isEmpty {
-            commitCountMap[line, default: 0] += 1
+        var currentDate: Date? = nil
+        var currentAuthor = ""
+        let dateFmt = DateFormatter()
+        dateFmt.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
+
+        for line in raw.components(separatedBy: "\n") {
+            if line.hasPrefix("COMMIT\t") {
+                totalCommits += 1
+                let parts = line.components(separatedBy: "\t")
+                currentDate   = parts.count > 1 ? dateFmt.date(from: parts[1]) : nil
+                currentAuthor = parts.count > 2 ? parts[2] : ""
+                if !currentAuthor.isEmpty { authorFreq[currentAuthor, default: 0] += 1 }
+            } else if !line.isEmpty {
+                commitCountMap[line, default: 0] += 1
+                if lastModifiedMap[line] == nil, let d = currentDate {
+                    lastModifiedMap[line] = d   // 첫 출현 = 가장 최근 커밋
+                }
+                if !currentAuthor.isEmpty {
+                    authorsMap[line, default: []].insert(currentAuthor)
+                }
+            }
         }
 
-        // Per-file last-modified date (parallel using DispatchGroup would be ideal,
-        // but keep simple with sequential — capped to top 50 files)
+        let topAuthors = authorFreq.sorted { $0.value > $1.value }.prefix(5).map(\.key)
         let swiftFiles = files.filter { $0.fileName.hasSuffix(".swift") }
 
         let changes: [GitFileChange] = swiftFiles.compactMap { file in
-            let rel = relativePath(file.filePath, to: gitRoot)
+            let rel   = relativePath(file.filePath, to: gitRoot)
             let count = commitCountMap[rel] ?? commitCountMap[file.fileName] ?? 0
             guard count > 0 else { return nil }
-
-            let dateStr = gitStr(["log", "-1", "--format=%ci", "--", rel], at: gitRoot)
-            let date    = parseDate(dateStr)
-            let authors = Array(Set(gitLines(["log", "--format=%an", "--", rel], at: gitRoot)))
-                .sorted().prefix(3).map { $0 }
-
             return GitFileChange(
                 fileName:     file.fileName,
                 filePath:     file.filePath,
                 commitCount:  count,
-                lastModified: date,
-                authors:      authors
+                lastModified: lastModifiedMap[rel] ?? lastModifiedMap[file.fileName],
+                authors:      Array(authorsMap[rel] ?? authorsMap[file.fileName] ?? []).sorted().prefix(3).map { $0 }
             )
         }.sorted { $0.commitCount > $1.commitCount }
 
@@ -115,7 +131,8 @@ struct GitHistoryAnalyzer {
         return full.hasPrefix(prefix) ? String(full.dropFirst(prefix.count)) : full
     }
 
-    private func run(_ args: [String], at path: String) -> String {
+    /// timeout(초) 초과 시 프로세스를 강제 종료하고 빈 문자열 반환
+    private func run(_ args: [String], at path: String, timeout: TimeInterval = 30) -> String {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/git")
         p.arguments = args
@@ -123,27 +140,17 @@ struct GitHistoryAnalyzer {
         let pipe = Pipe()
         p.standardOutput = pipe
         p.standardError  = Pipe()
-        try? p.run(); p.waitUntilExit()
+
+        do { try p.run() } catch { return "" }
+
+        let deadline = DispatchTime.now() + timeout
+        let done = DispatchSemaphore(value: 0)
+        p.terminationHandler = { _ in done.signal() }
+
+        if done.wait(timeout: deadline) == .timedOut {
+            p.terminate()
+            return ""
+        }
         return String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-    }
-
-    private func gitStr(_ args: [String], at path: String) -> String {
-        run(args, at: path).trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private func gitInt(_ args: [String], at path: String) -> Int {
-        let s = gitStr(args, at: path)
-        if s.contains("\n") { return s.components(separatedBy: "\n").filter { !$0.isEmpty }.count }
-        return Int(s) ?? 0
-    }
-
-    private func gitLines(_ args: [String], at path: String) -> [String] {
-        run(args, at: path).components(separatedBy: "\n").filter { !$0.isEmpty }
-    }
-
-    private func parseDate(_ str: String) -> Date? {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
-        return fmt.date(from: str)
     }
 }
