@@ -5,22 +5,12 @@ struct HomeView: View {
     let healthTrend: Double?
     let actionItems: [ActionItem]
     let selectedPath: String?
-    let lastSnapshot: ProjectSnapshot?
     let onNavigate: (ViewMode) -> Void
     var onSelectFolder: (() -> Void)? = nil
 
     private var projectName: String {
         guard let path = selectedPath else { return "프로젝트 없음" }
         return URL(fileURLWithPath: path).lastPathComponent
-    }
-
-    private var lastAnalysisDate: String? {
-        guard let snapshot = lastSnapshot else { return nil }
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        formatter.locale = Locale(identifier: "ko_KR")
-        return formatter.string(from: snapshot.date)
     }
 
     var body: some View {
@@ -78,11 +68,6 @@ struct HomeView: View {
                     Text(projectName)
                         .font(.title3)
                         .fontWeight(.bold)
-                    if let dateStr = lastAnalysisDate {
-                        Text("마지막 분석: \(dateStr)")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                    }
                 }
                 Spacer()
             }
@@ -112,11 +97,11 @@ struct HomeView: View {
                     destination: .list
                 )
                 actionCard(
-                    icon: "arrow.left.arrow.right",
-                    title: "이전과 비교",
-                    subtitle: lastSnapshot != nil ? "기록 있음" : "첫 분석",
+                    icon: "clock.arrow.circlepath",
+                    title: "변경 이력",
+                    subtitle: "Git 커밋 히스토리",
                     color: .purple,
-                    destination: .compare
+                    destination: .gitHistory
                 )
             }
         }

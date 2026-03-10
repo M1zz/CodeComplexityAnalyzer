@@ -6,7 +6,6 @@ import AppKit
 enum ViewMode: String, CaseIterable {
     case home         = "홈"
     case actions      = "할 일"
-    case compare      = "비교"
     case list         = "목록"
     case chart        = "차트"
     case graph        = "관계도"
@@ -22,7 +21,6 @@ enum ViewMode: String, CaseIterable {
         switch self {
         case .home:         return "house"
         case .actions:      return "list.bullet.clipboard"
-        case .compare:      return "arrow.left.arrow.right"
         case .list:         return "list.bullet"
         case .chart:        return "chart.bar.xaxis"
         case .graph:        return "network"
@@ -104,7 +102,6 @@ struct ContentView: View {
                         healthTrend:    viewModel.healthTrend,
                         actionItems:    viewModel.actionItems,
                         selectedPath:   viewModel.selectedPath,
-                        lastSnapshot:   viewModel.snapshots.filter { $0.projectPath == (viewModel.selectedPath ?? "") }.first,
                         onNavigate:     { navigate(to: $0) },
                         onSelectFolder: { viewModel.selectFolder() }
                     )
@@ -113,14 +110,6 @@ struct ContentView: View {
                         items:        viewModel.actionItems,
                         selectedPath: viewModel.selectedPath,
                         healthScore:  viewModel.healthScore
-                    )
-                case .compare:
-                    CompareView(
-                        snapshots:      viewModel.snapshots,
-                        currentHealth:  viewModel.healthScore,
-                        selectedPath:   viewModel.selectedPath,
-                        onUpdateNote:   { viewModel.updateSnapshotNote(id: $0, note: $1) },
-                        onDelete:       { viewModel.deleteSnapshot(id: $0) }
                     )
                 case .list:
                     controlBar
