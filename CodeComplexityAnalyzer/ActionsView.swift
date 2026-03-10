@@ -104,10 +104,27 @@ struct ActionsView: View {
 
     private var impactChartPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // 총 예상 개선량
+            let total = items.map(\.impactScore).reduce(0, +)
+            VStack(spacing: 4) {
+                Text("모든 항목 해결 시 예상 개선")
+                    .font(.body).foregroundColor(.secondary)
+                Text(String(format: "+%.1f점", total))
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.green)
+                Text("\(items.count)개 항목")
+                    .font(.body).foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color.green.opacity(0.08))
+            .cornerRadius(10)
+            .padding(.horizontal)
+            .padding(.top)
+
             Text("카테고리별 영향도")
                 .font(.headline)
                 .padding(.horizontal)
-                .padding(.top)
 
             if #available(macOS 13, *) {
                 Chart(categoryCounts, id: \.category) { entry in

@@ -125,17 +125,17 @@ struct ContentView: View {
                 case .graph:
                     GraphView(analyses: viewModel.analyses, edges: viewModel.dependencyEdges)
                 case .memory:
-                    MemoryLeakView(issues: viewModel.leakIssues)
+                    MemoryLeakView(issues: viewModel.leakIssues, healthScore: viewModel.healthScore)
                 case .architecture:
                     if let report = viewModel.archReport {
-                        ArchitectureView(report: report, analyses: viewModel.analyses)
+                        ArchitectureView(report: report, analyses: viewModel.analyses, healthScore: viewModel.healthScore)
                     } else {
                         ProgressView("아키텍처 분석 중...")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 case .quality:
                     if let report = viewModel.qualityReport {
-                        CodeQualityView(report: report)
+                        CodeQualityView(report: report, healthScore: viewModel.healthScore)
                     } else {
                         ProgressView("품질 분석 중...")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

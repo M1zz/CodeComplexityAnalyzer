@@ -110,6 +110,7 @@ struct FunctionView: View {
     private var statsPanel: some View {
         ScrollView {
             VStack(spacing: 16) {
+                refactoringTargetCard
                 summaryCards
                 complexityDistChart
                 topLengthChart
@@ -117,6 +118,42 @@ struct FunctionView: View {
             .padding()
         }
         .background(Color(.controlBackgroundColor))
+    }
+
+    private var refactoringTargetCard: some View {
+        let highCC   = functions.filter { $0.cc > 10 }.count
+        let longFns  = functions.filter { $0.lineCount > 50 }.count
+        let criticalCC = functions.filter { $0.cc > 20 }.count
+        return VStack(alignment: .leading, spacing: 10) {
+            Label("리팩토링 대상", systemImage: "wrench.and.screwdriver")
+                .font(.headline).foregroundColor(.orange)
+
+            HStack(spacing: 0) {
+                refactorStat("CC > 10\n(복잡)", "\(highCC)개",
+                             criticalCC > 0 ? .red : highCC > 0 ? .orange : .green)
+                Divider().frame(height: 36).padding(.horizontal, 8)
+                refactorStat("CC > 20\n(위험)", "\(criticalCC)개",
+                             criticalCC > 0 ? .red : .green)
+                Divider().frame(height: 36).padding(.horizontal, 8)
+                refactorStat("50줄 초과\n(긴 함수)", "\(longFns)개",
+                             longFns > 5 ? .orange : longFns > 0 ? .yellow : .green)
+            }
+
+            Text("CC > 10 함수를 분리하면 복잡도(25%)·품질(20%) 점수가 개선됩니다.\n분기를 줄이거나 도우미 함수로 추출하세요.")
+                .font(.body).foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding()
+        .background(Color(.windowBackgroundColor))
+        .cornerRadius(10)
+    }
+
+    private func refactorStat(_ label: String, _ value: String, _ color: Color) -> some View {
+        VStack(spacing: 3) {
+            Text(label).font(.body).foregroundColor(.secondary).multilineTextAlignment(.center)
+            Text(value).font(.title3).fontWeight(.bold).foregroundColor(color)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var summaryCards: some View {

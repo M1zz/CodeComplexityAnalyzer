@@ -3,6 +3,15 @@ import Charts
 
 struct CodeQualityView: View {
     let report: CodeQualityReport
+    let healthScore: HealthScore?
+
+    private var potentialImprovement: Double {
+        report.files
+            .filter { $0.score < 60 }
+            .prefix(5)
+            .map { (100 - $0.score) / 15.0 }
+            .reduce(0, +)
+    }
 
     @State private var searchText     = ""
     @State private var showOnlyIssues = false
@@ -43,6 +52,13 @@ struct CodeQualityView: View {
             metric("평균 함수 길이", String(format: "%.1f줄", report.avgFunctionLen), .green)
             metric("테스트 파일", "\(report.testFileCount)개", .purple)
             metric("이슈 있는 파일", "\(report.files.filter { !$0.issues.isEmpty }.count)개", .orange)
+
+            Divider().frame(height: 50)
+
+            metric("건강점수 기여", "20%", .purple)
+            metric("이슈 해결 예상",
+                   potentialImprovement > 0 ? String(format: "+%.1f점", potentialImprovement) : "양호",
+                   .green)
 
             Spacer()
         }

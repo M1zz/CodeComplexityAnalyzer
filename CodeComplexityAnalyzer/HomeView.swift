@@ -90,6 +90,11 @@ struct HomeView: View {
             // 건강 점수 카드
             healthScoreCard(health: health)
 
+            // 개선 잠재량 카드
+            if !actionItems.isEmpty {
+                improvementPotentialCard(health: health)
+            }
+
             // 3개 액션 카드
             HStack(spacing: 12) {
                 actionCard(
@@ -115,6 +120,58 @@ struct HomeView: View {
                 )
             }
         }
+    }
+
+    // MARK: - Improvement Potential Card
+
+    private func improvementPotentialCard(health: HealthScore) -> some View {
+        let totalPotential = actionItems.map(\.impactScore).reduce(0, +)
+        let projected = min(100.0, health.overall + totalPotential)
+        let criticalCount = actionItems.filter { $0.severity == .critical }.count
+        return HStack(spacing: 0) {
+            // 현재 → 예상
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("현재").font(.body).foregroundColor(.secondary)
+                    Text(String(format: "%.0f점", health.overall))
+                        .font(.title3).fontWeight(.bold)
+                }
+                Image(systemName: "arrow.right").foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("모두 해결 시").font(.body).foregroundColor(.secondary)
+                    Text(String(format: "%.0f점", projected))
+                        .font(.title3).fontWeight(.bold).foregroundColor(.green)
+                }
+                Text(String(format: "(+%.1f점)", totalPotential))
+                    .font(.body).fontWeight(.semibold).foregroundColor(.green)
+            }
+            .padding()
+
+            Divider().frame(height: 40)
+
+            // 할 일 요약
+            VStack(alignment: .leading, spacing: 2) {
+                Text("할 일 \(actionItems.count)개")
+                    .font(.body).fontWeight(.semibold)
+                Text(criticalCount > 0 ? "긴급 \(criticalCount)개 포함" : "긴급 항목 없음")
+                    .font(.body)
+                    .foregroundColor(criticalCount > 0 ? .red : .secondary)
+            }
+            .padding()
+
+            Spacer()
+
+            Button { onNavigate(.actions) } label: {
+                Label("할 일 보기", systemImage: "chevron.right")
+                    .font(.body).fontWeight(.medium)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+            .padding(.trailing)
+        }
+        .background(Color.green.opacity(0.07))
+        .cornerRadius(10)
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.green.opacity(0.2), lineWidth: 1))
     }
 
     // MARK: - Health Score Card

@@ -6,10 +6,27 @@ import AppKit
 
 struct MemoryLeakView: View {
     let issues: [MemoryLeakIssue]
+    let healthScore: HealthScore?
 
     @State private var selectedIssueType: MemoryLeakIssue.IssueType? = nil
     @State private var selectedSeverity:  MemoryLeakIssue.Severity?   = nil
     @State private var searchText = ""
+
+    // 파일×이슈타입 단위 중복 제거 후 예상 개선량
+    private var potentialImprovement: Double {
+        struct Key: Hashable { let path: String; let type: MemoryLeakIssue.IssueType }
+        var seen = Set<Key>()
+        var total = 0.0
+        for leak in issues {
+            guard seen.insert(Key(path: leak.filePath, type: leak.issueType)).inserted else { continue }
+            switch leak.severity {
+            case .high:   total += 2.0
+            case .medium: total += 0.8
+            case .low:    total += 0.2
+            }
+        }
+        return total
+    }
 
     private var filtered: [MemoryLeakIssue] {
         issues.filter { issue in
@@ -140,6 +157,7 @@ struct MemoryLeakView: View {
     private var dashboardPanel: some View {
         ScrollView {
             VStack(spacing: 16) {
+                scoreImpactCard
                 severityCards
                 issueTypeChart
                 topFilesChart
@@ -147,6 +165,36 @@ struct MemoryLeakView: View {
             .padding()
         }
         .background(Color(.controlBackgroundColor))
+    }
+
+    private var scoreImpactCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("건강점수 기여", systemImage: "heart.fill")
+                .font(.headline).foregroundColor(.red)
+
+            HStack(spacing: 0) {
+                impactStat("가중치", "20%", .red)
+                Divider().frame(height: 36).padding(.horizontal, 12)
+                impactStat("현재 점수", healthScore.map { String(format: "%.0f점", $0.memoryComponent) } ?? "-", .primary)
+                Divider().frame(height: 36).padding(.horizontal, 12)
+                impactStat("해결 시 예상", String(format: "+%.1f점", potentialImprovement), .green)
+            }
+
+            Text("메모리 안전성은 건강점수의 20%를 차지합니다.\n[weak self], weak delegate, Timer 무효화, 알림 옵저버 제거로 개선하세요.")
+                .font(.body).foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding()
+        .background(Color(.windowBackgroundColor))
+        .cornerRadius(10)
+    }
+
+    private func impactStat(_ label: String, _ value: String, _ color: Color) -> some View {
+        VStack(spacing: 3) {
+            Text(label).font(.body).foregroundColor(.secondary)
+            Text(value).font(.title3).fontWeight(.bold).foregroundColor(color)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     // 심각도 요약 카드

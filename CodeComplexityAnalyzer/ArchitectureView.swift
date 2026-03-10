@@ -6,6 +6,12 @@ import Charts
 struct ArchitectureView: View {
     let report: ArchReport
     let analyses: [FileAnalysis]
+    let healthScore: HealthScore?
+
+    private var potentialImprovement: Double {
+        Double(report.issues.filter { $0.severity == .high }.prefix(3).count) * 2.0
+        + Double(report.issues.filter { $0.severity == .medium }.prefix(5).count) * 0.8
+    }
 
     @State private var selectedLayer:   ArchLayer?    = nil
     @State private var selectedIssueType: ArchIssue.IssueType? = nil
@@ -80,6 +86,19 @@ struct ArchitectureView: View {
                     .foregroundColor(scoreColor(report.healthScore))
                 Text("/ 100")
                     .font(.body).foregroundColor(.secondary)
+            }
+
+            Divider().frame(height: 40)
+
+            // 건강점수 기여 & 예상 개선
+            VStack(spacing: 2) {
+                Text("건강점수 기여").font(.body).foregroundColor(.secondary)
+                Text("20%").font(.title3).fontWeight(.bold).foregroundColor(.purple)
+            }
+            VStack(spacing: 2) {
+                Text("이슈 해결 시").font(.body).foregroundColor(.secondary)
+                Text(String(format: "+%.1f점", potentialImprovement))
+                    .font(.title3).fontWeight(.bold).foregroundColor(.green)
             }
         }
         .padding(.horizontal, 20)
