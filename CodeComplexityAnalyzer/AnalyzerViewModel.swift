@@ -49,6 +49,8 @@ class AnalyzerViewModel: ObservableObject {
 @Published var qualityReport:    CodeQualityReport?
     @Published var gitHistoryReport: GitHistoryReport?
     @Published var isAnalyzing = false
+    @Published var analysisStep: String = ""
+    @Published var analysisProgress: Double = 0   // 0.0 ~ 1.0
     @Published var selectedPath: String?
     @Published var healthScore: HealthScore?
     @Published var actionItems: [ActionItem] = []
@@ -97,14 +99,20 @@ class AnalyzerViewModel: ObservableObject {
 
     func analyzeProject(at url: URL) async {
         isAnalyzing = true
+        analysisStep = ""; analysisProgress = 0
         analyses = []; summary = nil; dependencyEdges = []; leakIssues = []; archReport = nil
         functions = []; qualityReport = nil; gitHistoryReport = nil
         healthScore = nil; actionItems = []; healthTrend = nil; orphanedFiles = []
 
+        // Step 1/7 — Swift 파일 스캔
+        analysisStep = "Swift 파일 스캔 중..."; analysisProgress = 0.05
         let results = await analyzer.analyzeProject(at: url)
         analyses = results
         summary  = analyzer.generateSummary(from: results)
+        analysisProgress = 0.20
 
+        // Step 2/7 — 의존성 분석
+        analysisStep = "의존성 분석 중... (\(results.count)개 파일)"; analysisProgress = 0.25
         let depAnalyzer = DependencyAnalyzer()
         let edges = await Task.detached(priority: .userInitiated) {
             depAnalyzer.analyze(files: results)
@@ -113,33 +121,50 @@ class AnalyzerViewModel: ObservableObject {
         let depStats = DependencyStats.compute(analyses: results, edges: edges)
         let orphanedPaths = Set(depStats.orphanedFilePaths)
         orphanedFiles = results.filter { orphanedPaths.contains($0.filePath) }
+        analysisProgress = 0.38
 
+        // Step 3/7 — 메모리 누수 분석
+        analysisStep = "메모리 누수 패턴 분석 중..."; analysisProgress = 0.40
         let leaks = await Task.detached(priority: .userInitiated) {
             MemoryLeakAnalyzer().analyze(files: results)
         }.value
         leakIssues = leaks
+        analysisProgress = 0.52
 
+        // Step 4/7 — 아키텍처 분석
+        analysisStep = "아키텍처 레이어 분석 중..."; analysisProgress = 0.54
         let archRep = await Task.detached(priority: .userInitiated) {
             ArchitectureAnalyzer().analyze(files: results, edges: edges)
         }.value
         archReport = archRep
+        analysisProgress = 0.65
 
+        // Step 5/7 — 함수 분석
+        analysisStep = "함수 복잡도 분석 중..."; analysisProgress = 0.67
         let funcs = await Task.detached(priority: .userInitiated) {
             FunctionAnalyzer().analyze(files: results)
         }.value
         functions = funcs
+        analysisProgress = 0.76
 
+        // Step 6/7 — 코드 품질 분석
+        analysisStep = "코드 품질 분석 중..."; analysisProgress = 0.78
         let quality = await Task.detached(priority: .userInitiated) {
             CodeQualityAnalyzer().analyze(files: results, functions: funcs)
         }.value
         qualityReport = quality
+        analysisProgress = 0.87
 
+        // Step 7/7 — Git 이력 분석
+        analysisStep = "Git 커밋 이력 분석 중..."; analysisProgress = 0.89
         let gitRep = await Task.detached(priority: .userInitiated) { [path = url.path] in
             GitHistoryAnalyzer().analyze(projectPath: path, files: results)
         }.value
         gitHistoryReport = gitRep
+        analysisProgress = 0.96
 
         // 건강 점수 & 액션 생성
+        analysisStep = "건강 점수 계산 중..."; analysisProgress = 0.97
         let calculator = HealthScoreCalculator()
         let health = calculator.calculate(
             analyses: results,
@@ -161,6 +186,7 @@ class AnalyzerViewModel: ObservableObject {
         )
         saveSnapshot(health: health, projectPath: url.path)
 
+        analysisProgress = 1.0
         isAnalyzing = false
     }
 

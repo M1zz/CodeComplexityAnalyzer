@@ -430,20 +430,36 @@ struct ContentView: View {
     }
     
     private var analyzingView: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.5)
-            
-            Text("분석 중...")
-                .font(.title2)
-                .fontWeight(.medium)
-            
+        VStack(spacing: 24) {
+            Spacer()
+
+            ProgressView(value: viewModel.analysisProgress)
+                .progressViewStyle(.linear)
+                .frame(width: 320)
+                .animation(.easeInOut(duration: 0.3), value: viewModel.analysisProgress)
+
+            VStack(spacing: 6) {
+                Text(viewModel.analysisStep.isEmpty ? "분석 준비 중..." : viewModel.analysisStep)
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .animation(.default, value: viewModel.analysisStep)
+
+                Text(String(format: "%.0f%%", viewModel.analysisProgress * 100))
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .monospacedDigit()
+            }
+
             if let path = viewModel.selectedPath {
                 Text(path)
+                    .font(.body)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                    .frame(width: 360)
             }
+
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
