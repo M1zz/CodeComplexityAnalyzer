@@ -259,6 +259,8 @@ struct ArchitectureView: View {
 
                 // 심각도 요약 뱃지
                 severitySummary
+
+                BulkArchPromptButton(issues: filteredIssues)
             }
         }
         .padding(10)
@@ -546,6 +548,52 @@ struct ArchCopyPromptButton: View {
 
         수정 방법:
         \(issue.suggestion)
+        """
+    }
+}
+
+// MARK: - BulkArchPromptButton
+
+fileprivate struct BulkArchPromptButton: View {
+    let issues: [ArchIssue]
+    @State private var copied = false
+
+    var body: some View {
+        Button {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(makePrompt(), forType: .string)
+            withAnimation { copied = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation { copied = false }
+            }
+        } label: {
+            Label(
+                copied ? "복사됨!" : "전체 복사",
+                systemImage: copied ? "checkmark.circle.fill" : "doc.on.clipboard"
+            )
+            .font(.body).fontWeight(.semibold)
+            .foregroundColor(copied ? .green : .accentColor)
+        }
+        .buttonStyle(.bordered).controlSize(.small)
+    }
+
+    private func makePrompt() -> String {
+        let issueList = issues.enumerated().map { i, issue in
+            let sev = issue.severity == .high ? "🔴 높음" : issue.severity == .medium ? "🟠 중간" : "🟡 낮음"
+            return """
+            \(i + 1). [\(sev)] \(issue.type.rawValue) — \(issue.fileName)
+               문제: \(issue.description)
+               방향: \(issue.suggestion)
+               파일: \(issue.filePath)
+            """
+        }.joined(separator: "\n\n")
+
+        return """
+        아래는 Swift 프로젝트의 아키텍처 분석 결과입니다 (\(issues.count)개).
+        각 항목이 실제 문제인지 판단하고, 개선 방향을 간단히 제안해주세요.
+        수정 코드는 필요 없고, 방향만 알려주세요.
+
+        \(issueList)
         """
     }
 }
