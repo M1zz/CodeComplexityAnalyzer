@@ -148,12 +148,13 @@ struct HomeView: View {
                 Divider()
                     .frame(height: 100)
 
-                // 4개 컴포넌트 바
-                VStack(alignment: .leading, spacing: 10) {
+                // 5개 컴포넌트 바
+                VStack(alignment: .leading, spacing: 8) {
                     componentBar(label: "복잡도", value: health.complexityComponent, color: .orange)
                     componentBar(label: "의존성", value: health.dependencyComponent, color: .blue)
                     componentBar(label: "메모리", value: health.memoryComponent, color: .red)
                     componentBar(label: "품질", value: health.qualityComponent, color: .green)
+                    componentBar(label: "아키텍처", value: health.architectureComponent, color: .purple)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -168,7 +169,7 @@ struct HomeView: View {
             Text(label)
                 .font(.body)
                 .foregroundColor(.secondary)
-                .frame(width: 40, alignment: .leading)
+                .frame(width: 50, alignment: .leading)
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)

@@ -8,25 +8,29 @@ struct HealthScoreCalculator {
         analyses: [FileAnalysis],
         edges: [DependencyEdge],
         leaks: [MemoryLeakIssue],
-        qualityReport: CodeQualityReport?
+        qualityReport: CodeQualityReport?,
+        archReport: ArchReport?
     ) -> HealthScore {
-        let complexityScore = calcComplexityScore(analyses: analyses)
-        let dependencyScore = calcDependencyScore(analyses: analyses, edges: edges)
-        let memoryScore     = calcMemoryScore(leaks: leaks)
-        let qualityScore    = qualityReport?.overallScore ?? 80.0
+        let complexityScore   = calcComplexityScore(analyses: analyses)
+        let dependencyScore   = calcDependencyScore(analyses: analyses, edges: edges)
+        let memoryScore       = calcMemoryScore(leaks: leaks)
+        let qualityScore      = qualityReport?.overallScore ?? 80.0
+        let architectureScore = archReport?.healthScore ?? 70.0
 
-        // 가중치: 복잡도 30% + 의존성 20% + 메모리 25% + 품질 25%
-        let overall = complexityScore * 0.30
-                    + dependencyScore * 0.20
-                    + memoryScore     * 0.25
-                    + qualityScore    * 0.25
+        // 가중치: 복잡도25% + 의존성15% + 메모리20% + 품질20% + 아키텍처20%
+        let overall = complexityScore   * 0.25
+                    + dependencyScore   * 0.15
+                    + memoryScore       * 0.20
+                    + qualityScore      * 0.20
+                    + architectureScore * 0.20
 
         return HealthScore(
-            overall:              max(0, min(100, overall)),
-            complexityComponent:  complexityScore,
-            dependencyComponent:  dependencyScore,
-            memoryComponent:      memoryScore,
-            qualityComponent:     qualityScore
+            overall:                max(0, min(100, overall)),
+            complexityComponent:    complexityScore,
+            dependencyComponent:    dependencyScore,
+            memoryComponent:        memoryScore,
+            qualityComponent:       qualityScore,
+            architectureComponent:  architectureScore
         )
     }
 
@@ -48,6 +52,8 @@ struct HealthScoreCalculator {
             .sorted { $0.lineCount > $1.lineCount }
             .prefix(5)
         for fn in longFunctions {
+            // 품질 점수 개선 기여 ≈ 품질 가중치(20%) × 단일 파일 품질 상승 추정치
+            let impact = fn.lineCount > 100 ? 1.5 : 0.8
             actions.append(ActionItem(
                 title:       "\(fn.fileName)의 '\(fn.name)' 함수가 너무 깁니다",
                 detail:      "\(fn.lineCount)줄짜리 함수는 이해하기 어렵습니다. 작은 함수 여러 개로 쪼개면 버그를 찾기 쉬워집니다.",
@@ -55,7 +61,7 @@ struct HealthScoreCalculator {
                 filePath:    fn.filePath,
                 category:    .complexity,
                 severity:    fn.lineCount > 100 ? .critical : .warning,
-                impactScore: min(10, Double(fn.lineCount) / 20.0)
+                impactScore: impact
             ))
         }
 
@@ -65,6 +71,7 @@ struct HealthScoreCalculator {
             .sorted { $0.cc > $1.cc }
             .prefix(5)
         for fn in highCCFunctions {
+            let impact = fn.cc > 20 ? 1.5 : 0.8
             actions.append(ActionItem(
                 title:       "\(fn.fileName)의 '\(fn.name)' 함수가 너무 복잡합니다",
                 detail:      "분기(if/for/switch)가 \(fn.cc)개나 있어 테스트하기 어렵습니다. 분기를 줄이거나 도우미 함수로 추출하세요.",
@@ -72,7 +79,7 @@ struct HealthScoreCalculator {
                 filePath:    fn.filePath,
                 category:    .complexity,
                 severity:    fn.cc > 20 ? .critical : .warning,
-                impactScore: min(10, Double(fn.cc) / 3.0)
+                impactScore: impact
             ))
         }
 
@@ -82,6 +89,8 @@ struct HealthScoreCalculator {
             .filter { cyclicNodes.contains($0.filePath) }
             .prefix(5)
         for file in cyclicFiles {
+            // 순환 노드 1개 제거 시 의존성 점수 개선 ≈ (60/totalFiles) × 의존성가중치(15%)
+            let impact = min(3.0, 60.0 / max(10.0, Double(analyses.count)) * 0.15 * 100)
             actions.append(ActionItem(
                 title:       "\(file.fileName)이 순환 의존성에 엮여 있습니다",
                 detail:      "이 파일은 다른 파일과 서로 참조하고 있어, 한 쪽을 수정하면 다른 쪽도 영향 받습니다. 프로토콜로 의존성을 끊으세요.",
@@ -89,7 +98,7 @@ struct HealthScoreCalculator {
                 filePath:    file.filePath,
                 category:    .dependency,
                 severity:    .warning,
-                impactScore: 5.0
+                impactScore: impact
             ))
         }
 
@@ -101,6 +110,7 @@ struct HealthScoreCalculator {
             .filter { seen.insert(MemKey(path: $0.filePath, type: $0.issueType)).inserted }
             .prefix(5)
         for issue in highMemoryIssues {
+            // high 메모리 이슈 1건 제거 시 메모리 점수 +10 → 건강점수 +10×0.20 = 2.0점
             actions.append(ActionItem(
                 title:       "\(issue.fileName): \(titleFor(issueType: issue.issueType))",
                 detail:      issue.description + "\n\n수정 방법: " + issue.suggestion,
@@ -108,7 +118,7 @@ struct HealthScoreCalculator {
                 filePath:    issue.filePath,
                 category:    .memory,
                 severity:    .critical,
-                impactScore: 7.0
+                impactScore: 2.0
             ))
         }
 
@@ -137,6 +147,7 @@ struct HealthScoreCalculator {
                 .filter { $0.severity == .high }
                 .prefix(3)
             for issue in highArchIssues {
+                // 아키텍처 점수 개선 시 건강점수 기여 ≈ 아키텍처 가중치(20%)
                 actions.append(ActionItem(
                     title:       "\(issue.fileName): \(titleFor(archIssueType: issue.type))",
                     detail:      issue.description + "\n\n해결 방법: " + issue.suggestion,
@@ -144,7 +155,7 @@ struct HealthScoreCalculator {
                     filePath:    issue.filePath,
                     category:    .architecture,
                     severity:    .warning,
-                    impactScore: 6.0
+                    impactScore: 2.0
                 ))
             }
         }

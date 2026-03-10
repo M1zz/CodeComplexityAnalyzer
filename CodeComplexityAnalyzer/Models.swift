@@ -80,6 +80,7 @@ struct HealthScore {
     let dependencyComponent: Double
     let memoryComponent: Double
     let qualityComponent: Double
+    let architectureComponent: Double
 
     var grade: HealthGrade {
         if overall >= 90 { return .a }

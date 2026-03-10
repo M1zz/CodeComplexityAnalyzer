@@ -145,7 +145,8 @@ class AnalyzerViewModel: ObservableObject {
             analyses: results,
             edges: edges,
             leaks: leaks,
-            qualityReport: quality
+            qualityReport: quality,
+            archReport: archRep
         )
         healthScore = health
         let projectSnapshots = snapshots.filter { $0.projectPath == url.path }

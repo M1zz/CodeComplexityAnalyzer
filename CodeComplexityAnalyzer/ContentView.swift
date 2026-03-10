@@ -153,11 +153,14 @@ struct ContentView: View {
                     OrphanedFilesView(files: viewModel.orphanedFiles)
                 case .aiReport:
                     AIReportView(
-                        analyses:     viewModel.analyses,
-                        summary:      viewModel.summary,
-                        healthScore:  viewModel.healthScore,
-                        actionItems:  viewModel.actionItems,
-                        selectedPath: viewModel.selectedPath
+                        analyses:        viewModel.analyses,
+                        summary:         viewModel.summary,
+                        healthScore:     viewModel.healthScore,
+                        actionItems:     viewModel.actionItems,
+                        selectedPath:    viewModel.selectedPath,
+                        archReport:      viewModel.archReport,
+                        leakIssues:      viewModel.leakIssues,
+                        dependencyEdges: viewModel.dependencyEdges
                     )
                 }
             }
