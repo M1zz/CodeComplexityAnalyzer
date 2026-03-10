@@ -158,11 +158,49 @@ struct ProjectSnapshot: Codable, Identifiable {
     let dependencyScore: Double
     let memoryScore: Double
     let qualityScore: Double
+    let architectureScore: Double   // 신규 (구버전은 70.0 기본값)
     let totalFiles: Int
     let totalFunctions: Int
     let averageComplexity: Double
     let memoryIssueCount: Int
     let qualityOverallScore: Double
+    var note: String?               // 사용자 메모 (선택)
+
+    init(id: UUID, date: Date, projectPath: String, healthScore: Double, grade: String,
+         complexityScore: Double, dependencyScore: Double, memoryScore: Double,
+         qualityScore: Double, architectureScore: Double, totalFiles: Int,
+         totalFunctions: Int, averageComplexity: Double, memoryIssueCount: Int,
+         qualityOverallScore: Double, note: String? = nil) {
+        self.id = id; self.date = date; self.projectPath = projectPath
+        self.healthScore = healthScore; self.grade = grade
+        self.complexityScore = complexityScore; self.dependencyScore = dependencyScore
+        self.memoryScore = memoryScore; self.qualityScore = qualityScore
+        self.architectureScore = architectureScore
+        self.totalFiles = totalFiles; self.totalFunctions = totalFunctions
+        self.averageComplexity = averageComplexity; self.memoryIssueCount = memoryIssueCount
+        self.qualityOverallScore = qualityOverallScore; self.note = note
+    }
+
+    // 구버전 데이터 호환을 위한 커스텀 디코더
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id                = try c.decode(UUID.self,   forKey: .id)
+        date              = try c.decode(Date.self,   forKey: .date)
+        projectPath       = try c.decode(String.self, forKey: .projectPath)
+        healthScore       = try c.decode(Double.self, forKey: .healthScore)
+        grade             = try c.decode(String.self, forKey: .grade)
+        complexityScore   = try c.decode(Double.self, forKey: .complexityScore)
+        dependencyScore   = try c.decode(Double.self, forKey: .dependencyScore)
+        memoryScore       = try c.decode(Double.self, forKey: .memoryScore)
+        qualityScore      = try c.decode(Double.self, forKey: .qualityScore)
+        architectureScore = (try? c.decodeIfPresent(Double.self, forKey: .architectureScore)) ?? 70.0
+        totalFiles        = try c.decode(Int.self,    forKey: .totalFiles)
+        totalFunctions    = try c.decode(Int.self,    forKey: .totalFunctions)
+        averageComplexity = try c.decode(Double.self, forKey: .averageComplexity)
+        memoryIssueCount  = try c.decode(Int.self,    forKey: .memoryIssueCount)
+        qualityOverallScore = try c.decode(Double.self, forKey: .qualityOverallScore)
+        note              = try? c.decodeIfPresent(String.self, forKey: .note)
+    }
 }
 
 // MARK: - Metric Explanation

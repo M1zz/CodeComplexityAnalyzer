@@ -116,9 +116,11 @@ struct ContentView: View {
                     )
                 case .compare:
                     CompareView(
-                        snapshots:     viewModel.snapshots,
-                        currentHealth: viewModel.healthScore,
-                        selectedPath:  viewModel.selectedPath
+                        snapshots:      viewModel.snapshots,
+                        currentHealth:  viewModel.healthScore,
+                        selectedPath:   viewModel.selectedPath,
+                        onUpdateNote:   { viewModel.updateSnapshotNote(id: $0, note: $1) },
+                        onDelete:       { viewModel.deleteSnapshot(id: $0) }
                     )
                 case .list:
                     controlBar

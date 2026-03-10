@@ -210,17 +210,37 @@ class AnalyzerViewModel: ObservableObject {
             dependencyScore:      health.dependencyComponent,
             memoryScore:          health.memoryComponent,
             qualityScore:         health.qualityComponent,
-            totalFiles:           summary?.totalFiles      ?? 0,
-            totalFunctions:       summary?.totalFunctions  ?? 0,
+            architectureScore:    health.architectureComponent,
+            totalFiles:           summary?.totalFiles       ?? 0,
+            totalFunctions:       summary?.totalFunctions   ?? 0,
             averageComplexity:    summary?.averageComplexity ?? 0,
             memoryIssueCount:     leakIssues.filter { $0.severity == .high }.count,
             qualityOverallScore:  qualityReport?.overallScore ?? 0
         )
         var current = snapshots.filter { $0.projectPath == projectPath }
         current.insert(snapshot, at: 0)
-        if current.count > 5 { current = Array(current.prefix(5)) }
+        if current.count > 30 { current = Array(current.prefix(30)) }
         let others = snapshots.filter { $0.projectPath != projectPath }
         snapshots = current + others
+        persistSnapshots()
+    }
+
+    func updateSnapshotNote(id: UUID, note: String) {
+        snapshots = snapshots.map { snap in
+            guard snap.id == id else { return snap }
+            var updated = snap
+            updated.note = note.isEmpty ? nil : note
+            return updated
+        }
+        persistSnapshots()
+    }
+
+    func deleteSnapshot(id: UUID) {
+        snapshots.removeAll { $0.id == id }
+        persistSnapshots()
+    }
+
+    private func persistSnapshots() {
         if let data = try? JSONEncoder().encode(snapshots) {
             UserDefaults.standard.set(data, forKey: "cca_snapshots")
         }
