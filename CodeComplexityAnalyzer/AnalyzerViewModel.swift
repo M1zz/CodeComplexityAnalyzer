@@ -47,7 +47,7 @@ class AnalyzerViewModel: ObservableObject {
     @Published var archReport:       ArchReport?
     @Published var functions:       [FunctionInfo]    = []
 @Published var qualityReport:    CodeQualityReport?
-    @Published var gitHistoryReport: GitHistoryReport?
+    @Published var performanceReport: PerformanceReport?
     @Published var isAnalyzing = false
     @Published var analysisStep: String = ""
     @Published var analysisProgress: Double = 0   // 0.0 ~ 1.0
@@ -101,7 +101,7 @@ class AnalyzerViewModel: ObservableObject {
         isAnalyzing = true
         analysisStep = ""; analysisProgress = 0
         analyses = []; summary = nil; dependencyEdges = []; leakIssues = []; archReport = nil
-        functions = []; qualityReport = nil; gitHistoryReport = nil
+        functions = []; qualityReport = nil; performanceReport = nil
         healthScore = nil; actionItems = []; healthTrend = nil; orphanedFiles = []
 
         // Step 1/7 — Swift 파일 스캔
@@ -155,12 +155,12 @@ class AnalyzerViewModel: ObservableObject {
         qualityReport = quality
         analysisProgress = 0.87
 
-        // Step 7/7 — Git 이력 분석
-        analysisStep = "Git 커밋 이력 분석 중..."; analysisProgress = 0.89
-        let gitRep = await Task.detached(priority: .userInitiated) { [path = url.path] in
-            GitHistoryAnalyzer().analyze(projectPath: path, files: results)
+        // Step 7/7 — 성능 최적화 분석
+        analysisStep = "성능 최적화 패턴 분석 중..."; analysisProgress = 0.89
+        let perfReport = await Task.detached(priority: .userInitiated) {
+            PerformanceAnalyzer().analyze(files: results)
         }.value
-        gitHistoryReport = gitRep
+        performanceReport = perfReport
         analysisProgress = 0.96
 
         // 건강 점수 & 액션 생성

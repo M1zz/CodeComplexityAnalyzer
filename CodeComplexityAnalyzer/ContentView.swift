@@ -8,12 +8,13 @@ enum ViewMode: String, CaseIterable {
     case actions      = "할 일"
     case list         = "목록"
     case chart        = "차트"
-    case graph        = "관계도"
+    case dependency   = "의존성"
     case memory       = "메모리"
     case architecture = "아키텍처"
     case quality      = "품질"
     case functions    = "함수"
     case orphan       = "고아 파일"
+    case performance  = "성능"
     case aiReport     = "AI 진단"
 
     var icon: String {
@@ -22,12 +23,13 @@ enum ViewMode: String, CaseIterable {
         case .actions:      return "list.bullet.clipboard"
         case .list:         return "list.bullet"
         case .chart:        return "chart.bar.xaxis"
-        case .graph:        return "network"
+        case .dependency:   return "network"
         case .memory:       return "memorychip"
         case .architecture: return "building.columns"
         case .quality:      return "checkmark.seal"
         case .functions:    return "function"
-case .orphan:       return "xmark.doc"
+        case .orphan:       return "xmark.doc"
+        case .performance:  return "bolt.fill"
         case .aiReport:     return "brain"
         }
     }
@@ -115,8 +117,12 @@ struct ContentView: View {
                     fileListView
                 case .chart:
                     ChartsView(analyses: viewModel.analyses)
-                case .graph:
-                    GraphView(analyses: viewModel.analyses, edges: viewModel.dependencyEdges)
+                case .dependency:
+                    DependencyView(
+                        analyses:    viewModel.analyses,
+                        edges:       viewModel.dependencyEdges,
+                        healthScore: viewModel.healthScore
+                    )
                 case .memory:
                     MemoryLeakView(issues: viewModel.leakIssues, healthScore: viewModel.healthScore)
                 case .architecture:
@@ -137,6 +143,11 @@ struct ContentView: View {
                     FunctionView(functions: viewModel.functions)
                 case .orphan:
                     OrphanedFilesView(files: viewModel.orphanedFiles)
+                case .performance:
+                    PerformanceView(
+                        report:      viewModel.performanceReport,
+                        healthScore: viewModel.healthScore
+                    )
                 case .aiReport:
                     AIReportView(
                         analyses:        viewModel.analyses,

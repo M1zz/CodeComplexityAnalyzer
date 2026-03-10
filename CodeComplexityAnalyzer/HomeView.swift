@@ -98,10 +98,10 @@ struct HomeView: View {
                 )
                 actionCard(
                     icon: "network",
-                    title: "관계도",
-                    subtitle: "파일 의존성 시각화",
+                    title: "의존성",
+                    subtitle: "관계도 · 의존성 분석",
                     color: .purple,
-                    destination: .graph
+                    destination: .dependency
                 )
             }
         }
@@ -190,13 +190,13 @@ struct HomeView: View {
                 Divider()
                     .frame(height: 100)
 
-                // 5개 컴포넌트 바
+                // 5개 컴포넌트 바 (높을수록 좋음: 초록 ≥75, 노랑 50–74, 빨강 <50)
                 VStack(alignment: .leading, spacing: 8) {
-                    componentBar(label: "복잡도", value: health.complexityComponent, color: .orange)
-                    componentBar(label: "의존성", value: health.dependencyComponent, color: .blue)
-                    componentBar(label: "메모리", value: health.memoryComponent, color: .red)
-                    componentBar(label: "품질", value: health.qualityComponent, color: .green)
-                    componentBar(label: "아키텍처", value: health.architectureComponent, color: .purple)
+                    componentBar(label: "복잡도", value: health.complexityComponent)
+                    componentBar(label: "의존성", value: health.dependencyComponent)
+                    componentBar(label: "메모리", value: health.memoryComponent)
+                    componentBar(label: "품질",   value: health.qualityComponent)
+                    componentBar(label: "아키텍처", value: health.architectureComponent)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -206,8 +206,9 @@ struct HomeView: View {
         .cornerRadius(12)
     }
 
-    private func componentBar(label: String, value: Double, color: Color) -> some View {
-        HStack(spacing: 8) {
+    private func componentBar(label: String, value: Double) -> some View {
+        let barColor = healthColor(value)
+        return HStack(spacing: 8) {
             Text(label)
                 .font(.body)
                 .foregroundColor(.secondary)
@@ -217,16 +218,24 @@ struct HomeView: View {
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color.secondary.opacity(0.15))
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(color.opacity(0.8))
+                        .fill(barColor.opacity(0.85))
                         .frame(width: geo.size.width * min(value / 100.0, 1.0))
                 }
             }
             .frame(height: 6)
             Text(String(format: "%.0f", value))
                 .font(.body)
-                .foregroundColor(.secondary)
+                .fontWeight(.semibold)
+                .foregroundColor(barColor)
                 .frame(width: 28, alignment: .trailing)
         }
+    }
+
+    /// 높을수록 좋음: 75이상 초록, 50–74 노랑, 50미만 빨강
+    private func healthColor(_ value: Double) -> Color {
+        if value >= 75 { return .green }
+        if value >= 50 { return Color(red: 0.9, green: 0.6, blue: 0.0) } // amber
+        return .red
     }
 
     private func trendBadge(trend: Double) -> some View {

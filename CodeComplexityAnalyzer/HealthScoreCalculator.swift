@@ -174,16 +174,14 @@ struct HealthScoreCalculator {
     // MARK: - Private Score Helpers
 
     private func calcComplexityScore(analyses: [FileAnalysis]) -> Double {
-        var score = 100.0
-        for analysis in analyses {
-            switch analysis.complexityLevel {
-            case .veryHigh: score -= 8
-            case .high:     score -= 4
-            case .medium:   score -= 1
-            case .low:      break
-            }
-        }
-        return max(0, min(100, score))
+        guard !analyses.isEmpty else { return 100.0 }
+        let total = Double(analyses.count)
+        // 비율 기반 패널티: 프로젝트 규모에 무관하게 일관된 점수
+        // veryHigh 파일 비율 × 100 + high 비율 × 50 + medium 비율 × 10
+        let vhPenalty = Double(analyses.filter { $0.complexityLevel == .veryHigh }.count) / total * 100
+        let hPenalty  = Double(analyses.filter { $0.complexityLevel == .high     }.count) / total * 50
+        let mPenalty  = Double(analyses.filter { $0.complexityLevel == .medium   }.count) / total * 10
+        return max(0, min(100, 100 - vhPenalty - hPenalty - mPenalty))
     }
 
     private func calcDependencyScore(analyses: [FileAnalysis], edges: [DependencyEdge]) -> Double {

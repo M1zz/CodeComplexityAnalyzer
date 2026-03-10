@@ -23,8 +23,6 @@
 		AA0014 /* FunctionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0014 /* FunctionView.swift */; };
 AA0017 /* CodeQualityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0017 /* CodeQualityAnalyzer.swift */; };
 		AA0018 /* CodeQualityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0018 /* CodeQualityView.swift */; };
-		AA0019 /* GitHistoryAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0019 /* GitHistoryAnalyzer.swift */; };
-		AA0020 /* GitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0020 /* GitHistoryView.swift */; };
 		AA0021 /* HealthScoreCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0021 /* HealthScoreCalculator.swift */; };
 		AA0022 /* MetricInfoButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0022 /* MetricInfoButton.swift */; };
 		AA0023 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0023 /* HomeView.swift */; };
@@ -32,6 +30,9 @@ AA0017 /* CodeQualityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef
 		AA0025 /* CompareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0025 /* CompareView.swift */; };
 		AA0026 /* OrphanedFilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0026 /* OrphanedFilesView.swift */; };
 		AA0027 /* AIReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0027 /* AIReportView.swift */; };
+		AA0028 /* PerformanceAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0028 /* PerformanceAnalyzer.swift */; };
+		AA0029 /* PerformanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0029 /* PerformanceView.swift */; };
+		AA0030 /* DependencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0030 /* DependencyView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,8 +53,6 @@ AA0017 /* CodeQualityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef
 		BB0014 /* FunctionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionView.swift; sourceTree = "<group>"; };
 BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeQualityAnalyzer.swift; sourceTree = "<group>"; };
 		BB0018 /* CodeQualityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeQualityView.swift; sourceTree = "<group>"; };
-		BB0019 /* GitHistoryAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHistoryAnalyzer.swift; sourceTree = "<group>"; };
-		BB0020 /* GitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHistoryView.swift; sourceTree = "<group>"; };
 		BB0021 /* HealthScoreCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthScoreCalculator.swift; sourceTree = "<group>"; };
 		BB0022 /* MetricInfoButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricInfoButton.swift; sourceTree = "<group>"; };
 		BB0023 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -61,6 +60,9 @@ BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileT
 		BB0025 /* CompareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompareView.swift; sourceTree = "<group>"; };
 		BB0026 /* OrphanedFilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrphanedFilesView.swift; sourceTree = "<group>"; };
 		BB0027 /* AIReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIReportView.swift; sourceTree = "<group>"; };
+		BB0028 /* PerformanceAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceAnalyzer.swift; sourceTree = "<group>"; };
+		BB0029 /* PerformanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceView.swift; sourceTree = "<group>"; };
+		BB0030 /* DependencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,8 +103,6 @@ BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileT
 				BB0014 /* FunctionView.swift */,
 				BB0017 /* CodeQualityAnalyzer.swift */,
 				BB0018 /* CodeQualityView.swift */,
-				BB0019 /* GitHistoryAnalyzer.swift */,
-				BB0020 /* GitHistoryView.swift */,
 				BB0021 /* HealthScoreCalculator.swift */,
 				BB0022 /* MetricInfoButton.swift */,
 				BB0023 /* HomeView.swift */,
@@ -110,6 +110,9 @@ BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileT
 				BB0025 /* CompareView.swift */,
 			BB0026 /* OrphanedFilesView.swift */,
 			BB0027 /* AIReportView.swift */,
+			BB0028 /* PerformanceAnalyzer.swift */,
+			BB0029 /* PerformanceView.swift */,
+			BB0030 /* DependencyView.swift */,
 			);
 			path = CodeComplexityAnalyzer;
 			sourceTree = "<group>";
@@ -206,8 +209,6 @@ BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileT
 				AA0014 /* FunctionView.swift in Sources */,
 				AA0017 /* CodeQualityAnalyzer.swift in Sources */,
 				AA0018 /* CodeQualityView.swift in Sources */,
-				AA0019 /* GitHistoryAnalyzer.swift in Sources */,
-				AA0020 /* GitHistoryView.swift in Sources */,
 				AA0021 /* HealthScoreCalculator.swift in Sources */,
 				AA0022 /* MetricInfoButton.swift in Sources */,
 				AA0023 /* HomeView.swift in Sources */,
@@ -215,6 +216,9 @@ BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileT
 				AA0025 /* CompareView.swift in Sources */,
 			AA0026 /* OrphanedFilesView.swift in Sources */,
 			AA0027 /* AIReportView.swift in Sources */,
+					AA0028 /* PerformanceAnalyzer.swift in Sources */,
+					AA0029 /* PerformanceView.swift in Sources */,
+					AA0030 /* DependencyView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

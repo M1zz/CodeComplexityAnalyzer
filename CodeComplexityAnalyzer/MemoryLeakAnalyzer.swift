@@ -75,6 +75,9 @@ struct MemoryLeakAnalyzer {
     ]
 
     private func detectClosureCaptures(lines: [String], file: FileAnalysis) -> [MemoryLeakIssue] {
+        // struct/enum 파일은 값 타입 — retain cycle 불가
+        guard file.classCount > 0 else { return [] }
+
         var issues: [MemoryLeakIssue] = []
 
         for (i, line) in lines.enumerated() {
@@ -84,6 +87,15 @@ struct MemoryLeakAnalyzer {
             let isEscaping = escapingKeywords.contains { line.contains($0) }
             guard isEscaping else { continue }
             guard !line.contains("[weak self]"), !line.contains("[unowned self]") else { continue }
+
+            // 앞쪽 30줄에 이미 [weak self]가 있고 아직 그 클로저 안에 있으면 외부에서 처리된 것
+            let lookbackStart = max(0, i - 30)
+            let lookback = lines[lookbackStart..<i].joined(separator: "\n")
+            if lookback.contains("[weak self]") || lookback.contains("[unowned self]") {
+                let opens  = lookback.filter { $0 == "{" }.count
+                let closes = lookback.filter { $0 == "}" }.count
+                if opens > closes { continue } // 외부 [weak self] 클로저 안에 있음
+            }
 
             // 이후 최대 15줄에서 self 캡처 여부 확인
             let end   = min(i + 15, lines.count)
@@ -109,6 +121,9 @@ struct MemoryLeakAnalyzer {
     // MARK: - 2. 강한 delegate 선언
 
     private func detectStrongDelegates(lines: [String], file: FileAnalysis) -> [MemoryLeakIssue] {
+        // 클래스가 없는 파일은 스킵
+        guard file.classCount > 0 else { return [] }
+
         var issues: [MemoryLeakIssue] = []
         let pattern = #"\bvar\s+\w*[Dd]elegate\w*\s*:"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
@@ -117,9 +132,19 @@ struct MemoryLeakAnalyzer {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.hasPrefix("//") else { continue }
             guard !line.contains("weak ") else { continue }
+            // protocol 선언 안의 delegate 프로퍼티는 스킵 (구현체가 아님)
+            guard !trimmed.hasPrefix("var") || !line.contains("protocol ") else { continue }
 
             let range = NSRange(line.startIndex..., in: line)
             guard regex.firstMatch(in: line, range: range) != nil else { continue }
+
+            // 앞쪽 20줄에서 현재 타입 컨텍스트 확인 — protocol 블록 내부면 스킵
+            let lookback = lines[max(0, i - 20)..<i].joined(separator: "\n")
+            if lookback.contains("protocol ") {
+                let opens  = lookback.filter { $0 == "{" }.count
+                let closes = lookback.filter { $0 == "}" }.count
+                if opens > closes { continue }
+            }
 
             let fixed = trimmed
                 .replacingOccurrences(of: "var ", with: "weak var ", range: trimmed.range(of: "var "))
@@ -170,14 +195,32 @@ struct MemoryLeakAnalyzer {
     private func detectNotificationMismatch(
         lines: [String], file: FileAnalysis, content: String
     ) -> [MemoryLeakIssue] {
-        let addCount    = content.components(separatedBy: "addObserver").count - 1
+        // 셀렉터 방식 addObserver만 카운트 (토큰 방식은 removeObserver 불필요)
+        // 토큰 방식: `let token = NotificationCenter.default.addObserver(forName:...)`
+        // 셀렉터 방식: `NotificationCenter.default.addObserver(self, selector:...)`
+        let selectorAddCount = lines.filter { line in
+            line.contains("addObserver") &&
+            (line.contains("selector:") || line.contains(", selector")) &&
+            !line.trimmingCharacters(in: .whitespaces).hasPrefix("//")
+        }.count
+
+        // 토큰 방식 (결과를 변수에 저장하는 패턴)
+        let tokenAddCount = lines.filter { line in
+            line.contains("addObserver") &&
+            !line.contains("selector:") &&
+            (line.contains("= NotificationCenter") || line.contains("=NotificationCenter")) &&
+            !line.trimmingCharacters(in: .whitespaces).hasPrefix("//")
+        }.count
+
         let removeCount = content.components(separatedBy: "removeObserver").count - 1
 
-        guard addCount > removeCount, addCount > 0 else { return [] }
+        // 셀렉터 방식이 있고 removeObserver가 부족한 경우만 신고
+        guard selectorAddCount > 0, selectorAddCount > removeCount else { return [] }
 
         for (i, line) in lines.enumerated() {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
-            guard line.contains("addObserver"), !trimmed.hasPrefix("//") else { continue }
+            guard line.contains("addObserver"), line.contains("selector:"),
+                  !trimmed.hasPrefix("//") else { continue }
             return [MemoryLeakIssue(
                 fileName:    file.fileName,
                 filePath:    file.filePath,
@@ -185,7 +228,7 @@ struct MemoryLeakAnalyzer {
                 lineContent: trimmed,
                 issueType:   .notification,
                 severity:    .medium,
-                description: "addObserver \(addCount)회, removeObserver \(removeCount)회: 옵저버가 올바르게 제거되지 않을 수 있습니다.",
+                description: "셀렉터 방식 addObserver \(selectorAddCount)회, removeObserver \(removeCount)회: 옵저버가 누적될 수 있습니다. (토큰 방식 \(tokenAddCount)건은 제외)",
                 suggestion:  "deinit에 removeObserver를 추가하세요:\ndeinit {\n    NotificationCenter.default.removeObserver(self)\n}"
             )]
         }
