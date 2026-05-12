@@ -1,6 +1,8 @@
 import SwiftUI
 import Charts
 
+// MARK: - TrendView (CompareView)
+
 struct CompareView: View {
     let snapshots: [ProjectSnapshot]
     let currentHealth: HealthScore?
@@ -8,20 +10,63 @@ struct CompareView: View {
     let onUpdateNote: (UUID, String) -> Void
     let onDelete: (UUID) -> Void
 
-    private var projectSnapshots: [ProjectSnapshot] {
-        guard let path = selectedPath else { return snapshots }
-        return snapshots.filter { $0.projectPath == path }
+    @State private var visibleSeries: Set<TrendSeries> = Set(TrendSeries.allCases)
+
+    // MARK: - Series Definition
+
+    enum TrendSeries: String, CaseIterable, Identifiable, Hashable {
+        case overall      = "전체"
+        case complexity   = "복잡도"
+        case dependency   = "의존성"
+        case memory       = "메모리"
+        case quality      = "품질"
+        case architecture = "아키텍처"
+
+        var id: String { rawValue }
+
+        var color: Color {
+            switch self {
+            case .overall:      return .accentColor
+            case .complexity:   return .orange
+            case .dependency:   return .blue
+            case .memory:       return .red
+            case .quality:      return .green
+            case .architecture: return .purple
+            }
+        }
+
+        var lineWidth: CGFloat { self == .overall ? 2.5 : 1.5 }
+        var symbolSize: CGFloat { self == .overall ? 55 : 28 }
+
+        func value(from s: ProjectSnapshot) -> Double {
+            switch self {
+            case .overall:      return s.healthScore
+            case .complexity:   return s.complexityScore
+            case .dependency:   return s.dependencyScore
+            case .memory:       return s.memoryScore
+            case .quality:      return s.qualityScore
+            case .architecture: return s.architectureScore
+            }
+        }
     }
+
+    // MARK: - Filtered Snapshots
+
+    private var projectSnapshots: [ProjectSnapshot] {
+        let all = selectedPath.map { p in snapshots.filter { $0.projectPath == p } } ?? snapshots
+        return all.sorted { $0.date < $1.date }
+    }
+
+    // MARK: - Body
 
     var body: some View {
         if projectSnapshots.isEmpty {
             emptyStateView
         } else {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    if projectSnapshots.count >= 2 {
-                        sparklineSection
-                    }
+                VStack(alignment: .leading, spacing: 24) {
+                    trendChartSection
+                    Divider()
                     snapshotListSection
                 }
                 .padding()
@@ -33,66 +78,155 @@ struct CompareView: View {
 
     private var emptyStateView: some View {
         VStack(spacing: 16) {
-            Image(systemName: "clock.arrow.circlepath")
+            Image(systemName: "chart.line.uptrend.xyaxis")
                 .font(.system(size: 48))
                 .foregroundColor(.secondary)
-            Text("비교 기록이 없습니다")
+            Text("분석 기록이 없습니다")
                 .font(.title2)
                 .fontWeight(.medium)
-            Text("첫 분석 후 비교 기록이 쌓입니다\n두 번 이상 분석하면 변화를 추적할 수 있습니다")
+            Text("분석을 두 번 이상 실행하면\n지표 변화 추이를 확인할 수 있습니다")
                 .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Sparkline Chart
+    // MARK: - Trend Chart
 
-    private var sparklineSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("건강 점수 추이")
-                .font(.headline)
+    private var trendChartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("건강 지표 추이")
+                        .font(.headline)
+                    Text("\(projectSnapshots.count)회 분석 · 최근 30회 보관")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                seriesToggleBar
+            }
 
-            if #available(macOS 13, *) {
-                let sorted = projectSnapshots.sorted { $0.date < $1.date }
-                Chart(sorted.indices, id: \.self) { i in
-                    let snap = sorted[i]
-                    LineMark(
-                        x: .value("날짜", snap.date),
-                        y: .value("점수", snap.healthScore)
-                    )
-                    .foregroundStyle(Color.accentColor)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
+            // Multi-series chart
+            Chart {
+                ForEach(TrendSeries.allCases.filter { visibleSeries.contains($0) }) { series in
+                    ForEach(projectSnapshots.indices, id: \.self) { idx in
+                        let snap = projectSnapshots[idx]
+                        LineMark(
+                            x: .value("날짜", snap.date),
+                            y: .value(series.rawValue, series.value(from: snap)),
+                            series: .value("지표", series.rawValue)
+                        )
+                        .foregroundStyle(series.color)
+                        .lineStyle(StrokeStyle(lineWidth: series.lineWidth))
 
-                    PointMark(
-                        x: .value("날짜", snap.date),
-                        y: .value("점수", snap.healthScore)
-                    )
-                    .foregroundStyle(Color.accentColor)
-                    .annotation(position: .top) {
-                        Text(String(format: "%.0f", snap.healthScore))
-                            .font(.body)
-                            .foregroundColor(.secondary)
+                        PointMark(
+                            x: .value("날짜", snap.date),
+                            y: .value(series.rawValue, series.value(from: snap))
+                        )
+                        .foregroundStyle(series.color)
+                        .symbolSize(series.symbolSize)
                     }
                 }
-                .chartYScale(domain: 0...100)
-                .chartXAxis {
-                    AxisMarks(values: .automatic) { value in
-                        AxisGridLine()
-                        AxisValueLabel {
-                            if let date = value.as(Date.self) {
-                                Text(shortDate(date))
-                                    .font(.body)
-                            }
+            }
+            .chartYScale(domain: 0...100)
+            .chartYAxis {
+                AxisMarks(values: [0, 25, 50, 75, 100]) { v in
+                    AxisGridLine()
+                    AxisValueLabel { Text("\(v.as(Int.self) ?? 0)") }
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: .automatic) { v in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let date = v.as(Date.self) {
+                            Text(shortDate(date)).font(.caption)
                         }
                     }
                 }
-                .frame(height: 160)
-                .padding()
-                .background(Color(.controlBackgroundColor))
-                .cornerRadius(10)
+            }
+            .frame(height: 260)
+            .padding()
+            .background(Color(.controlBackgroundColor))
+            .cornerRadius(10)
+
+            // Delta summary (first → last)
+            if projectSnapshots.count >= 2 {
+                deltaSummaryRow
             }
         }
+    }
+
+    private var seriesToggleBar: some View {
+        HStack(spacing: 6) {
+            ForEach(TrendSeries.allCases) { series in
+                Button {
+                    if visibleSeries.contains(series) {
+                        if visibleSeries.count > 1 { visibleSeries.remove(series) }
+                    } else {
+                        visibleSeries.insert(series)
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(series.color)
+                            .frame(width: 7, height: 7)
+                        Text(series.rawValue)
+                            .font(.caption)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        visibleSeries.contains(series)
+                            ? series.color.opacity(0.15)
+                            : Color(.controlBackgroundColor)
+                    )
+                    .foregroundColor(
+                        visibleSeries.contains(series) ? series.color : .secondary
+                    )
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(
+                                visibleSeries.contains(series)
+                                    ? series.color.opacity(0.4)
+                                    : Color.clear,
+                                lineWidth: 1
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var deltaSummaryRow: some View {
+        let first = projectSnapshots.first!
+        let last  = projectSnapshots.last!
+        let deltaSeries = TrendSeries.allCases.filter { visibleSeries.contains($0) }
+
+        return HStack(spacing: 12) {
+            Text("첫 분석 → 최근")
+                .font(.body)
+                .foregroundColor(.secondary)
+
+            ForEach(deltaSeries) { series in
+                let diff = series.value(from: last) - series.value(from: first)
+                HStack(spacing: 3) {
+                    Circle().fill(series.color).frame(width: 7, height: 7)
+                    Text(series.rawValue)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                    Text(String(format: "%+.0f", diff))
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .foregroundColor(diff >= 0 ? .green : .red)
+                }
+            }
+        }
+        .padding(.horizontal, 4)
     }
 
     // MARK: - Snapshot List
@@ -140,7 +274,7 @@ struct CompareView: View {
 
 // MARK: - SnapshotRow
 
-private struct SnapshotRow: View {
+struct SnapshotRow: View {
     let snapshot: ProjectSnapshot
     let previous: ProjectSnapshot?
     let onUpdateNote: (UUID, String) -> Void
@@ -152,7 +286,7 @@ private struct SnapshotRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            // 헤더: 등급 + 점수 + 날짜 + 삭제
+            // Header: grade + score + date + delete
             HStack {
                 Text(snapshot.grade)
                     .font(.title2).fontWeight(.bold)
@@ -190,28 +324,27 @@ private struct SnapshotRow: View {
                 .padding(.leading, 8)
             }
 
-            // 5요소 delta
+            // 5-component delta
             if let prev = previous {
                 HStack(spacing: 12) {
-                    metricDelta("복잡도", snapshot.complexityScore,   prev.complexityScore)
-                    metricDelta("의존성", snapshot.dependencyScore,   prev.dependencyScore)
-                    metricDelta("메모리", snapshot.memoryScore,       prev.memoryScore)
-                    metricDelta("품질",   snapshot.qualityScore,      prev.qualityScore)
+                    metricDelta("복잡도",  snapshot.complexityScore,   prev.complexityScore)
+                    metricDelta("의존성",  snapshot.dependencyScore,   prev.dependencyScore)
+                    metricDelta("메모리",  snapshot.memoryScore,       prev.memoryScore)
+                    metricDelta("품질",    snapshot.qualityScore,      prev.qualityScore)
                     metricDelta("아키텍처", snapshot.architectureScore, prev.architectureScore)
                 }
                 .padding(.leading, 4)
             }
 
-            // 기본 지표
+            // Basic metrics
             HStack(spacing: 16) {
-                metricItem("파일",     "\(snapshot.totalFiles)")
-                metricItem("함수",     "\(snapshot.totalFunctions)")
+                metricItem("파일",      "\(snapshot.totalFiles)")
+                metricItem("함수",      "\(snapshot.totalFunctions)")
                 metricItem("평균복잡도", String(format: "%.1f", snapshot.averageComplexity))
                 metricItem("메모리이슈", "\(snapshot.memoryIssueCount)")
             }
             .padding(.leading, 4)
 
-            // 메모
             noteSection
         }
         .padding(14)
@@ -234,41 +367,31 @@ private struct SnapshotRow: View {
                         .focused($noteFocused)
                         .onSubmit { commitNote() }
                     Button("완료") { commitNote() }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
+                        .buttonStyle(.borderedProminent).controlSize(.small)
                     Button("취소") {
                         noteText = snapshot.note ?? ""
                         isEditingNote = false
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+                    .buttonStyle(.bordered).controlSize(.small)
                 }
             } else {
                 HStack(spacing: 8) {
-                    Image(systemName: "note.text")
-                        .foregroundColor(.secondary).font(.body)
+                    Image(systemName: "note.text").foregroundColor(.secondary).font(.body)
                     if let note = snapshot.note, !note.isEmpty {
-                        Text(note)
-                            .font(.body).foregroundColor(.primary)
+                        Text(note).font(.body)
                     } else {
-                        Text("메모 없음 — 탭하여 추가")
-                            .font(.body).foregroundColor(.secondary)
+                        Text("메모 없음 — 탭하여 추가").font(.body).foregroundColor(.secondary)
                     }
                     Spacer()
                     Button {
-                        isEditingNote = true
-                        noteFocused = true
+                        isEditingNote = true; noteFocused = true
                     } label: {
                         Image(systemName: "pencil").font(.body)
                     }
-                    .buttonStyle(.plain)
-                    .foregroundColor(.accentColor)
+                    .buttonStyle(.plain).foregroundColor(.accentColor)
                 }
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    isEditingNote = true
-                    noteFocused = true
-                }
+                .onTapGesture { isEditingNote = true; noteFocused = true }
             }
         }
     }
@@ -285,14 +408,12 @@ private struct SnapshotRow: View {
         return VStack(alignment: .leading, spacing: 2) {
             Text(label).font(.body).foregroundColor(.secondary)
             HStack(spacing: 2) {
-                Text(String(format: "%.0f", previous))
-                    .font(.body).foregroundColor(.secondary)
-                Image(systemName: "arrow.right").font(.body).foregroundColor(.secondary)
-                Text(String(format: "%.0f", current))
-                    .font(.body).fontWeight(.semibold)
+                Text(String(format: "%.0f", previous)).font(.body).foregroundColor(.secondary)
+                Image(systemName: "arrow.right").font(.caption).foregroundColor(.secondary)
+                Text(String(format: "%.0f", current)).font(.body).fontWeight(.semibold)
                 if diff != 0 {
                     Image(systemName: diff > 0 ? "arrow.up" : "arrow.down")
-                        .font(.body)
+                        .font(.caption)
                         .foregroundColor(diff > 0 ? .green : .red)
                 }
             }

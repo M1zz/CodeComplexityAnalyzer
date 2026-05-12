@@ -16,6 +16,8 @@ enum ViewMode: String, CaseIterable {
     case orphan       = "고아 파일"
     case performance  = "성능"
     case aiReport     = "AI 진단"
+    case trend        = "트렌드"
+    case matrix       = "우선순위"
 
     var icon: String {
         switch self {
@@ -31,6 +33,8 @@ enum ViewMode: String, CaseIterable {
         case .orphan:       return "xmark.doc"
         case .performance:  return "bolt.fill"
         case .aiReport:     return "brain"
+        case .trend:        return "chart.line.uptrend.xyaxis"
+        case .matrix:       return "square.grid.2x2"
         }
     }
 }
@@ -158,6 +162,19 @@ struct ContentView: View {
                         archReport:      viewModel.archReport,
                         leakIssues:      viewModel.leakIssues,
                         dependencyEdges: viewModel.dependencyEdges
+                    )
+                case .trend:
+                    CompareView(
+                        snapshots:    viewModel.snapshots,
+                        currentHealth: viewModel.healthScore,
+                        selectedPath: viewModel.selectedPath,
+                        onUpdateNote: viewModel.updateSnapshotNote,
+                        onDelete:     viewModel.deleteSnapshot
+                    )
+                case .matrix:
+                    PriorityMatrixView(
+                        analyses:    viewModel.analyses,
+                        actionItems: viewModel.actionItems
                     )
                 }
             }
@@ -529,7 +546,7 @@ struct FileRow: View {
     private var detailView: some View {
         VStack(alignment: .leading, spacing: 12) {
             Divider()
-            
+
             HStack(spacing: 40) {
                 // 타입 정보
                 VStack(alignment: .leading, spacing: 8) {
@@ -537,45 +554,45 @@ struct FileRow: View {
                         .font(.body)
                         .foregroundColor(.secondary)
                         .fontWeight(.semibold)
-                    
-                    detailMetric(label: "Classes", value: analysis.classCount)
-                    detailMetric(label: "Structs", value: analysis.structCount)
-                    detailMetric(label: "Enums", value: analysis.enumCount)
+
+                    detailMetric(label: "Classes",   value: analysis.classCount)
+                    detailMetric(label: "Structs",   value: analysis.structCount)
+                    detailMetric(label: "Enums",     value: analysis.enumCount)
                     detailMetric(label: "Protocols", value: analysis.protocolCount)
                 }
-                
+
                 // 코드 정보
                 VStack(alignment: .leading, spacing: 8) {
                     Text("코드 구성")
                         .font(.body)
                         .foregroundColor(.secondary)
                         .fontWeight(.semibold)
-                    
+
                     detailMetric(label: "Properties", value: analysis.propertyCount)
-                    detailMetric(label: "Functions", value: analysis.functionCount)
-                    detailMetric(label: "순환 복잡도", value: analysis.cyclomaticComplexity)
+                    detailMetric(label: "Functions",  value: analysis.functionCount)
+                    detailMetric(label: "순환 복잡도",  value: analysis.cyclomaticComplexity)
                 }
-                
+
                 Spacer()
-                
+
                 // 복잡도 게이지
                 VStack(spacing: 8) {
                     Text("복잡도 분석")
                         .font(.body)
                         .foregroundColor(.secondary)
                         .fontWeight(.semibold)
-                    
+
                     ZStack {
                         Circle()
                             .stroke(Color.secondary.opacity(0.2), lineWidth: 8)
                             .frame(width: 100, height: 100)
-                        
+
                         Circle()
                             .trim(from: 0, to: min(analysis.complexityScore / 500, 1.0))
                             .stroke(complexityColor, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                             .frame(width: 100, height: 100)
                             .rotationEffect(.degrees(-90))
-                        
+
                         VStack(spacing: 2) {
                             Text(String(format: "%.0f", analysis.complexityScore))
                                 .font(.title2)
@@ -587,7 +604,29 @@ struct FileRow: View {
                     }
                 }
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.top)
+
+            // ── 열기 버튼 ────────────────────────────────────────────────
+            HStack(spacing: 8) {
+                Button {
+                    openInXcode(analysis.filePath)
+                } label: {
+                    Label("Xcode에서 열기", systemImage: "chevron.right.square")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button {
+                    revealInFinder(analysis.filePath)
+                } label: {
+                    Label("Finder에서 보기", systemImage: "folder")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            .padding(.horizontal)
+            .padding(.bottom)
         }
         .background(Color(.textBackgroundColor))
     }

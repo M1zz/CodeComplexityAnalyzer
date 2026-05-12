@@ -267,17 +267,32 @@ struct ActionRow: View {
     }
 
     private var detailView: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Divider()
             Text(item.detail)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 16)
-            ActionCopyPromptButton(item: item)
-                .padding(.top, 4)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 10)
+            HStack(spacing: 8) {
+                ActionCopyPromptButton(item: item)
+                Button {
+                    openInXcode(item.filePath)
+                } label: {
+                    Label("Xcode에서 열기", systemImage: "chevron.right.square")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                Button {
+                    revealInFinder(item.filePath)
+                } label: {
+                    Label("Finder", systemImage: "folder")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 10)
         }
         .background(Color(.textBackgroundColor))
     }

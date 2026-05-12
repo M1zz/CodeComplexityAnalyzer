@@ -33,6 +33,9 @@ AA0017 /* CodeQualityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef
 		AA0028 /* PerformanceAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0028 /* PerformanceAnalyzer.swift */; };
 		AA0029 /* PerformanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0029 /* PerformanceView.swift */; };
 		AA0030 /* DependencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0030 /* DependencyView.swift */; };
+		AA0031 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0031 /* Assets.xcassets */; };
+		AA0032 /* XcodeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0032 /* XcodeIntegration.swift */; };
+		AA0033 /* PriorityMatrixView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0033 /* PriorityMatrixView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +66,9 @@ BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileT
 		BB0028 /* PerformanceAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceAnalyzer.swift; sourceTree = "<group>"; };
 		BB0029 /* PerformanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceView.swift; sourceTree = "<group>"; };
 		BB0030 /* DependencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyView.swift; sourceTree = "<group>"; };
+		BB0031 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BB0032 /* XcodeIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XcodeIntegration.swift; sourceTree = "<group>"; };
+		BB0033 /* PriorityMatrixView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriorityMatrixView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +119,9 @@ BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileT
 			BB0028 /* PerformanceAnalyzer.swift */,
 			BB0029 /* PerformanceView.swift */,
 			BB0030 /* DependencyView.swift */,
+			BB0031 /* Assets.xcassets */,
+			BB0032 /* XcodeIntegration.swift */,
+			BB0033 /* PriorityMatrixView.swift */,
 			);
 			path = CodeComplexityAnalyzer;
 			sourceTree = "<group>";
@@ -183,6 +192,7 @@ BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileT
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA0031 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -193,6 +203,8 @@ BB0017 /* CodeQualityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileT
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA0032 /* XcodeIntegration.swift in Sources */,
+				AA0033 /* PriorityMatrixView.swift in Sources */,
 				AA0001 /* CodeComplexityAnalyzerApp.swift in Sources */,
 				AA0002 /* ContentView.swift in Sources */,
 				AA0003 /* Models.swift in Sources */,
